@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>FileSystem-Client</groupId>
+    <artifactId>FileSystem-Client</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <properties>
+        <jersey.version>2.22.2</jersey.version>
+    </properties>
+
+
+    <dependencies>
+        <!-- this project -->
+        <dependency>
+            <groupId>FileSystem-Common</groupId>
+            <artifactId>FileSystem-Common</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <!-- jersey -->
+        <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-servlet</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-multipart</artifactId>
+            <!--<version>2.26-b08</version>-->
+            <version>${jersey.version}</version>
+        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.glassfish.jersey.media</groupId>-->
+            <!--<artifactId>jersey-media-moxy</artifactId>-->
+            <!--<version>${jersey.version}</version>-->
+        <!--</dependency>-->
+
+        <!-- other -->
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.17</version>
+        </dependency>
+    </dependencies>
+
+</project>

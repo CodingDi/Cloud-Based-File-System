@@ -1,0 +1,71 @@
+package com.free4lab.filesystem.action;
+
+import com.free4lab.filesystem.beans.JerseyResponse;
+import com.free4lab.filesystem.client.FileOperatorClient;
+import com.free4lab.filesystem.common.Signal;
+import com.free4lab.filesystem.util.ClientFactory;
+import org.apache.log4j.Logger;
+
+import javax.ws.rs.core.Response;
+import java.io.InputStream;
+
+/**
+ * Created by lizhenhao on 2017/2/20.
+ */
+public class DownLoadAction extends BaseAction {
+    private static Logger logger = Logger.getLogger(DownLoadAction.class);
+
+    private String contentType;
+
+    private long contentLength;
+
+    private String contentDisposition;
+
+    private InputStream inputStream;
+
+    private String path;
+
+    private FileOperatorClient fileOpClient = ClientFactory.getFileOperatorClient();
+
+    public String execute() throws Exception{
+        JerseyResponse jerseyResponse = fileOpClient.DownFile().params("path",path).execute();
+        Response response = jerseyResponse.getResponse();
+        if(response.getHeaderString("status").equals(Signal.OK)) {
+            //下载所需参数
+            contentLength = Long.parseLong(response.getHeaderString("fileLength"));
+            contentType = response.getHeaderString("fileType");
+            contentDisposition = response.getHeaderString("contentDisposition");
+            logger.info("contentDisposition:" + contentDisposition);
+            inputStream = response.readEntity(InputStream.class);
+            return SUCCESS;
+        }
+        else return ERROR;
+    }
+
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public long getContentLength() {
+        return contentLength;
+    }
+
+    public String getContentDisposition() {
+        return contentDisposition;
+    }
+
+    public InputStream getInputStream() {
+        return inputStream;
+    }
+
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+}
+

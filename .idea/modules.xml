@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/FileSystem-Client/FileSystem-Client.iml" filepath="$PROJECT_DIR$/FileSystem-Client/FileSystem-Client.iml" />
+      <module fileurl="file://$PROJECT_DIR$/FileSystem-Common/FileSystem-Common.iml" filepath="$PROJECT_DIR$/FileSystem-Common/FileSystem-Common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/FileSystem-Server/FileSystem-Server.iml" filepath="$PROJECT_DIR$/FileSystem-Server/FileSystem-Server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/FileSystem-web-struts2/FileSystem-web-struts2.iml" filepath="$PROJECT_DIR$/FileSystem-web-struts2/FileSystem-web-struts2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/filesystem.iml" filepath="$PROJECT_DIR$/.idea/filesystem.iml" />
+    </modules>
+  </component>
+</project>

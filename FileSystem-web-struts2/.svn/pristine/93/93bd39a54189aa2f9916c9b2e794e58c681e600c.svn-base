@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE struts PUBLIC
+        "-//Apache Software Foundation//DTD Struts Configuration 2.3//EN"
+        "http://struts.apache.org/dtds/struts-2.3.dtd">
+
+<struts>
+    <package name="account" namespace="/account" extends="default">
+        <action name="findByRoleAndEnterpriseId" method="getAllUserByRoleAndEnterpriseId" class="com.free4lab.filesystem.action.AccountAction">
+            <result name="success">/include/_userlist.jsp</result>
+        </action>
+        <action name="findByRole" method="getAllUserByRole" class="com.free4lab.filesystem.action.AccountAction">
+            <result name="success">/include/enterprise/_userlist.jsp</result>
+        </action>
+        <action name="add" method="addUser" class="com.free4lab.filesystem.action.AccountAction">
+            <result name="success" type="json"></result>
+        </action>
+        <action name="delete" method="deleteById" class="com.free4lab.filesystem.action.AccountAction">
+            <result name="success" type="json"></result>
+        </action>
+        <action name="update" method="updateUser" class="com.free4lab.filesystem.action.AccountAction">
+            <result name="success" type="json"></result>
+        </action>
+        <action name="changePSW" method="modifyPassword" class="com.free4lab.filesystem.action.AccountAction">
+            <result name="success" type="json"></result>
+        </action>
+    </package>
+
+</struts>

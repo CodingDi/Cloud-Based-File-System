@@ -1,0 +1,57 @@
+package com.free4lab.filesystem.resource;
+
+import com.free4lab.filesystem.operate.EnterpriseOperate;
+import com.free4lab.filesystem.response.BasicResponse;
+import com.free4lab.filesystem.response.EnterpriseResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
+
+/**
+ * Created by Idan on 2017/7/26.
+ */
+@Path("enterpriseResource")
+@Controller
+public class EnterpriseResource {
+
+    @Autowired
+    private EnterpriseOperate enterpriseOperate;
+
+    @Path("enterpriseCreate")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces({MediaType.APPLICATION_XML,MediaType.APPLICATION_JSON})
+    public BasicResponse userAddResult(@FormParam("name") String name,
+                                       @FormParam("description") String description) {
+        return enterpriseOperate.save(name,description);
+    }
+
+
+    @Path("enterpriseDelete")
+    @DELETE
+    @Produces({MediaType.APPLICATION_XML,MediaType.APPLICATION_JSON})
+    public BasicResponse userDeleteResult(@QueryParam("enterpriseId") String enterpriseId) {
+        return enterpriseOperate.delete(enterpriseId);
+    }
+
+
+    @Path("enterpriseUpdate")
+    @GET
+    @Produces({MediaType.APPLICATION_XML,MediaType.APPLICATION_JSON})
+    public BasicResponse userUpdateResult(@QueryParam("enterpriseId") String enterpriseId,
+                                          @QueryParam("name") String name,
+                                          @QueryParam("description") String description) {
+        return enterpriseOperate.update(enterpriseId,name,description);
+    }
+
+    @Path("enterpriseFind")
+    @GET
+    @Produces({MediaType.APPLICATION_XML,MediaType.APPLICATION_JSON})
+    public EnterpriseResponse enterpriseFindResult(@QueryParam("enterpriseId")String enterpriseId) {
+        EnterpriseResponse response = enterpriseOperate.find(enterpriseId);
+        return response;
+    }
+
+}

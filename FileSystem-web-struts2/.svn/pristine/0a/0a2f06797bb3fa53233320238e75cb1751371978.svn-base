@@ -1,0 +1,133 @@
+/**
+ * Created by lizhenhao on 2017/2/26.
+ */
+var kind = 0; //这个默认是0
+
+function getDirMess(obj) {
+    var flag = $(obj).prevAll(".flag").text();
+    if(flag == true) {
+
+    }
+    else {
+        var path = $(obj).prevAll("input").val();
+        console.log(path);
+        var fileName = $(obj).text();
+        var dir = $(obj).parent("div");
+        console.log(dir);
+        $.get(
+            "dirTree",
+            {
+                currentPath: path,
+                fileName: fileName,
+            },
+            function (data) {
+                var jsonObj = data.fileList;
+                $.each(jsonObj, function (i, item) {
+                    ajaxUpdate(item, dir, data.currentPath);
+                });
+            });
+    }
+}
+
+function ajaxUpdate(item,dir,path) {
+    if (item.type == "d") {
+        dir.append(
+            "<div class=\"dir_style\">"+
+            "<input hidden=\"hidden\" value="+path+">"+
+            "<a onclick=\"getDirMess(this)\" href=\"javascript:void(0);\">" + item.fileName + "</a>"+
+            "</div>")
+    }
+}
+
+
+
+var setting = {
+    data: {
+        key: {
+        },
+        simpleData: {
+            enable: true
+        },
+        keep: {
+            parent:true
+        }
+    },
+
+    callback: {
+        onClick: clickDirectory,
+        // onAsyncSuccess: setFont,
+        beforeExpand:beforeExpand,
+    },
+    async: {
+        enable: true,
+    },
+    view: {
+        dblClickExpand: true,
+        // fontCss:setFont,
+    },
+};
+
+/**
+ * 展开之前执行的函数
+ * @param treeId
+ * @param treeNode
+ * @return
+ */
+function beforeExpand(treeId, treeNode) {
+    console.log(treeId);
+    console.log(treeNode);
+    if (!treeNode.isAjaxing) {
+        // ajaxGetNodes(treeNode, "refresh");
+        var type = treeNode.type;
+        queryDir(kind,type,treeNode);
+        return true;
+    } else {
+        alert("Loading...");
+        return false;
+    }
+}
+
+// 当前的kind，对应的是三中类型,分别0：年度，1：事件，2：部门
+// type对应的是当前类型
+function queryDir(kind, type,treeNode) {
+    kind = kind;
+    var url = "directory/findAllDirectory";
+    $.get(url,
+        {
+            'kind':kind,
+            'type':type
+        },function (data) {
+            var data = data.directoryResponse;
+            if (data.errorCode == 200) {
+               //TODO update
+               zNodes = data.dirList;
+               var zTree = $.fn.zTree.getZTreeObj("dirTree");
+               //TODO 需要测试
+                treeNode.append(zNodes);
+               zTree.reAsyncChildNodes(treeNode,"refresh");
+           } else {
+               alert(data.errorMessage);
+           }
+        });
+}
+
+function clickDirectory(event, treeId, treeNode) {
+    var path = treeNode.path;
+    console.log(treeNode);
+    var fileName = treeNode.name;
+    var id = treeNode.id;
+    $.get(
+        "dirMessage",
+        {
+            currentPath: path,
+            fileName: fileName,
+            id:id,
+        },
+        function (data) {
+            // console.log(data.currentPath);
+            // $("#pathToShow").html(data.currentPath);
+            // $("#path").html(data.currentPath);
+            // $("#id").html(data.id);
+            $("#fileList").html(data);
+        });
+}

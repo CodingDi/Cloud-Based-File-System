@@ -1,0 +1,42 @@
+package com.free4lab.filesystem.action;
+
+import com.opensymphony.xwork2.ActionContext;
+import com.opensymphony.xwork2.ActionSupport;
+
+import java.util.Map;
+
+/**
+ * Created by Idan on 2017/7/21.
+ */
+public class BaseAction extends ActionSupport {
+
+    private Map<String,Object> getSession() {
+        return ActionContext.getContext().getSession();
+    }
+
+    public String findEnterpriseId() {
+        if (getSession()==null) {
+            return null;
+        } else {
+            return (String) getSession().get("enterpriseId");
+        }
+    }
+
+
+    public String findUserId() {
+        if (getSession()==null) {
+            return null;
+        } else {
+            return String.valueOf(getSession().get("userId"));
+        }
+    }
+
+    public String findRole() {
+        if (getSession()==null) {
+            return null;
+        } else {
+            return String.valueOf(getSession().get("role"));
+        }
+    }
+
+}

@@ -1,0 +1,152 @@
+package com.free4lab.filesystem.operate.imp;
+
+import com.free4lab.filesystem.check.UserCheck;
+import com.free4lab.filesystem.common.Constants;
+import com.free4lab.filesystem.common.Signal;
+import com.free4lab.filesystem.operate.UserOperate;
+import com.free4lab.filesystem.response.BasicResponse;
+import com.free4lab.filesystem.response.UserDetail;
+import com.free4lab.filesystem.response.UserResponse;
+import com.free4lab.filesystem.sql.beans.UserEntity;
+import com.free4lab.filesystem.sql.service.UserService;
+import com.free4lab.filesystem.util.EntityUtil;
+import com.free4lab.filesystem.util.StringUtil;
+import com.free4lab.filesystem.util.TimeUtil;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Created by lizhenhao on 2017/7/18.
+ */
+@Component
+public class UserOperateImp implements UserOperate{
+    protected static Logger logger = Logger.getLogger(UserOperateImp.class);
+
+    private UserCheck userCheck = UserCheck.getInstantce();
+    private UserService userService = UserService.getInstance();
+    @Override
+    public UserResponse findUser(String tel, String password) {
+        UserEntity userEntity = userService.getUser(tel,password);
+        List<UserDetail> list = new ArrayList<>();
+        if (userEntity!= null) {
+            UserDetail userDetail = new UserDetail();
+            EntityUtil.converJavaBean(userDetail,userEntity);
+            list.add(userDetail);
+        }
+        return new UserResponse(list, Signal.SUCCESS,Signal.OK);
+    }
+
+    public UserResponse findByRoleAnEnterpriseId(String role,String enterpriseId){
+        if (!userCheck.checkRole(role)) {
+            return new UserResponse(Signal.FIND_USER_ERROR,Signal.STATUS_INVALID_PARAMETER);
+        }
+        List<UserDetail> userDetails = userService.findByRoleAnEnterpriseId(role,enterpriseId);
+        if (userDetails!=null) {
+            return new UserResponse(userDetails, Signal.SUCCESS,Signal.OK);
+        } else {
+            return new UserResponse(Signal.FIND_USER_ERROR,Signal.STATUS_INVALID_PARAMETER);
+        }
+    }
+
+    public UserResponse findUserByRole(String role){
+        if (!userCheck.checkRole(role)) {
+            return new UserResponse(Signal.FIND_USER_ERROR,Signal.STATUS_INVALID_PARAMETER);
+        }
+        List<UserDetail> userDetails = userService.findByRole(role);
+        if (userDetails!=null) {
+            return new UserResponse(userDetails, Signal.SUCCESS,Signal.OK);
+        } else {
+            return new UserResponse(Signal.FIND_USER_ERROR,Signal.STATUS_INVALID_PARAMETER);
+        }
+    }
+
+    @Override
+    public BasicResponse saveUser(String userName, String role, String enterpriseId, String tel, String password) {
+        if(userService.getUserByTelAndRole(tel, role) != null) {
+            return new BasicResponse(Signal.SAVE_USER_ERROR,Signal.STATUS_DUPLICATEUSER_ERROR);
+        }
+        UserEntity userEntity = new UserEntity();
+        userEntity.setEnterpriseId(enterpriseId);
+        userEntity.setPassword(password);
+        userEntity.setRole(role);
+        userEntity.setTelephone(tel);
+        userEntity.setUserName(userName);
+        userEntity.setCreateDate(TimeUtil.getCurrentTimestamp());
+        userService.saveUser(userEntity);
+        return new BasicResponse(Signal.SUCCESS,Signal.OK);
+    }
+
+    @Override
+    public BasicResponse updateUser(String userId,String userName,String role,String tel, String password) {
+        if (userId == null) {
+            return new BasicResponse(Signal.UPDATE_USER_ERROR,Signal.STATUS_INVALID_PARAMETER);
+        }
+        try {
+            UserEntity userEntity = userService.findByUserId(Integer.valueOf(userId));
+            if (userEntity == null) {
+                return new BasicResponse(Signal.UPDATE_USER_ERROR,Signal.STATUS_INVALID_PARAMETER);
+            }
+            if (!StringUtil.isNullOrEmpty(userName)) {
+                userEntity.setUserName(userName);
+            }
+            if (!StringUtil.isNullOrEmpty(role)) {
+                userEntity.setRole(role);
+            }
+            if (!StringUtil.isNullOrEmpty(tel)) {
+                userEntity.setTelephone(tel);
+            }
+            if (!StringUtil.isNullOrEmpty(password)) {
+                userEntity.setPassword(password);
+            }
+            UserEntity result = userService.updateUser(userEntity);
+            if (result==null) {
+                return new BasicResponse(Signal.UPDATE_USER_ERROR,Signal.STATUS_INVALID_PARAMETER);
+            } else {
+                return new BasicResponse(Signal.SUCCESS,Signal.OK);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new BasicResponse(Signal.UPDATE_USER_ERROR,Signal.STATUS_INVALID_PARAMETER);
+        }
+    }
+
+    @Override
+    public BasicResponse modifyPassword(String userId, String oldPassword, String newPassword){
+        if (userId == null || oldPassword==null || newPassword ==null) {
+            return new BasicResponse(Signal.MODIFY_PASSWORD_ERROR,Signal.STATUS_INVALID_PARAMETER);
+        }
+        UserEntity userEntity = userService.findByUserId(Integer.valueOf(userId));
+        if (null == userEntity || !oldPassword.equals(userEntity.getPassword())) {
+            return new BasicResponse(Signal.MODIFY_PASSWORD_OLD_ERROR,Signal.STATUS_INVALID_PARAMETER);
+        }
+        userEntity.setPassword(newPassword);
+        UserEntity result = userService.updateUser(userEntity);
+        if (result==null) {
+            return new BasicResponse(Signal.MODIFY_PASSWORD_ERROR,Signal.STATUS_INVALID_PARAMETER);
+        } else {
+            return new BasicResponse(Signal.SUCCESS,Signal.OK);
+        }
+    }
+
+
+    @Override
+    public BasicResponse deleteUser(String userId) {
+        if (userId == null) {
+            return new BasicResponse(Signal.DELETE_USER_ERROR,Signal.STATUS_INVALID_PARAMETER);
+        }
+        try {
+            boolean rs =  userService.deleteUser(Integer.valueOf(userId));
+            if (rs) {
+                return new BasicResponse(Signal.SUCCESS,Signal.OK);
+            } {
+                return new BasicResponse(Signal.DELETE_USER_ERROR,Signal.STATUS_INVALID_PARAMETER);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new BasicResponse(Signal.DELETE_USER_ERROR,Signal.STATUS_INVALID_PARAMETER);
+        }
+    }
+}

@@ -1,0 +1,8 @@
+ROOT_DIR = /home/fileSystem/
+DIR_TYPE = d
+FILE_TYPE = -
+
+FILE_PATH = files
+
+SOUYA_APPKEY = fe5ed76e69314a4f9e77669f43db5aa1
+SOUYA_SECRETKEY = PvzosAURRwWcpPn3a4n7JYVCk7VzOkNd

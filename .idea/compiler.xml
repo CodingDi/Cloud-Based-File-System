@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="FileSystem-Client" />
+        <module name="FileSystem-Common" />
+        <module name="FileSystem-Server" />
+        <module name="FileSystem-web-struts2" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="FileSystem-Client" target="1.5" />
+      <module name="FileSystem-Common" target="1.5" />
+      <module name="FileSystem-Server" target="1.7" />
+      <module name="FileSystem-web-struts2" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

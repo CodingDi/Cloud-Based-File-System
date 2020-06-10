@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE struts PUBLIC
+        "-//Apache Software Foundation//DTD Struts Configuration 2.3//EN"
+        "http://struts.apache.org/dtds/struts-2.3.dtd">
+
+<struts>
+    <package name="file" namespace="/file" extends="default">
+        <action name="uploadFile" class="com.free4lab.filesystem.action.UpLoadAction">
+            <result name="success" type="json"></result>
+        </action>
+        <action name="searchFileAdvanced" class="com.free4lab.filesystem.action.SearchAction" method="searchFilesAdvanced">
+            <result name="success">/home/search.jsp</result>
+            <result name="error">/error/error.jsp</result>
+        </action>
+        <action name="searchFile" class="com.free4lab.filesystem.action.SearchAction" method="searchFiles">
+            <result name="success">/home/search.jsp</result>
+            <result name="error">/error/error.jsp</result>
+        </action>
+        <action name="findFile" class="com.free4lab.filesystem.action.SearchAction" method="findFiles">
+            <result name="success">/include/_filelist.jsp</result>
+        </action>
+        <action name="downFile" class="com.free4lab.filesystem.action.DownLoadAction">
+            <result name="success" type="stream"></result>
+            <result name="error">/error/error.jsp</result>
+        </action>
+        <action name="deleteFile" class="com.free4lab.filesystem.action.FileOperationAction" method="deleteByIdAndType">
+            <result name="success" type="json"></result>
+            <result name="error">/error/error.jsp</result>
+        </action>
+    </package>
+</struts>

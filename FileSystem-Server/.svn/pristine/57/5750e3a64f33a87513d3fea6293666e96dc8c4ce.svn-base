@@ -1,0 +1,24 @@
+package com.free4lab.filesystem.operate;
+
+import com.free4lab.filesystem.response.BasicResponse;
+import com.free4lab.filesystem.response.EnterpriseResponse;
+import com.free4lab.filesystem.sql.beans.EnterpriseEntity;
+
+/**
+ * Created by Idan on 2017/7/26.
+ */
+public interface EnterpriseOperate {
+
+    //添加
+    public BasicResponse save(String name, String description);
+
+    //删除
+    public BasicResponse delete(String enterpriseId);
+
+    //修改
+    public BasicResponse update(String enterpriseId, String name, String description);
+
+    //查询
+    public EnterpriseResponse find();
+
+}

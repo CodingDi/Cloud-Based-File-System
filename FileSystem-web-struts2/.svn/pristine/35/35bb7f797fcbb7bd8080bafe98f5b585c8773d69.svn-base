@@ -1,0 +1,58 @@
+.path-style {
+    font-size:16px;
+    float: left;
+}
+.button-style {
+    float: right;
+}
+.font-style {
+    font-size: 16px;
+}
+.font-bold {
+    font-weight: bold;
+}
+.form-style {
+    margin: 20px 20px 20px 20px;
+}
+.create-style {
+    width: 75%;
+    margin-right: 3%;
+}
+
+.font-underline-bold {
+    text-decoration: underline;
+    font-weight: bold
+}
+.description {
+    font-size:14px;
+    font-family:'Arial','Microsoft YaHei';
+    white-space:nowrap;
+    width:40em;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+.title {
+    font-size:16px;
+    font-weight:bold
+}
+.font-size {
+    font-size: 16px;
+}
+.padding-top {
+    padding-top: 0px;
+}
+a {
+    cursor: pointer;
+}
+
+.dropdown li a {
+    color: #337ab7;
+    border-color: #337ab7;
+}
+body{
+    font-size: 16px;
+}
+
+.panel-body .front-table > tbody > tr > td{
+    border-top: none;
+}

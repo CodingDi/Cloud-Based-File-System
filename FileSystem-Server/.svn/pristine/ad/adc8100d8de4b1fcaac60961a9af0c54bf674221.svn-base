@@ -1,0 +1,1857 @@
+
+
+
+HTTPAUTH Working Group                                           Y. Oiwa
+Internet-Draft                                               H. Watanabe
+Intended status: Experimental                                  H. Takagi
+Expires: March 21, 2017                                       ITRI, AIST
+                                                                K. Maeda
+                                                              T. Hayashi
+                                                                 Lepidum
+                                                                 Y. Ioku
+                                                              Individual
+                                                      September 17, 2016
+
+
+         HTTP Authentication Extensions for Interactive Clients
+                    draft-ietf-httpauth-extension-09
+
+Abstract
+
+   This document specifies extensions for the HTTP authentication
+   framework for interactive clients.  Currently, fundamental features
+   of HTTP-level authentication are insufficient for complex
+   requirements of various Web-based applications.  This forces these
+   applications to implement their own authentication frameworks by
+   means like HTML forms, which becomes one of the hurdles against
+   introducing secure authentication mechanisms handled jointly by
+   servers and user-agent.  The extended framework fills gaps between
+   Web application requirements and HTTP authentication provisions to
+   solve the above problems, while maintaining compatibility with
+   existing Web and non-Web uses of HTTP authentication.
+   
+   本文档为交互式客户端的HTTP身份验证框架的扩展。
+   现在，HTTP级别的身份验证的基本功能不足以满足各种基于Web的应用程序的复杂要求。
+   这就迫使许多想要实现身份认证框架的应用必须使用类似HTML的形式，
+   这成为阻碍引入由服务器和用户代理联合处理的安全认证机制的障碍之一。
+   扩展框架填补了Web应用程序需求和HTTP认证规定之间的差距，
+   并且解决了上述的问题，同时保持了现有Web和非Web使用HTTP认证的兼容性。
+
+Status of this Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at http://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on March 21, 2017.
+
+Copyright Notice
+
+
+
+
+Oiwa, et al.             Expires March 21, 2017                 [Page 1]
+Internet-Draft   HTTP Auth. Ext. for Interactive Clients  September 2016
+
+
+   Copyright (c) 2016 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents
+   (http://trustee.ietf.org/license-info) in effect on the date of
+   publication of this document.  Please review these documents
+   carefully, as they describe your rights and restrictions with respect
+   to this document.  Code Components extracted from this document must
+   include Simplified BSD License text as described in Section 4.e of
+   the Trust Legal Provisions and are provided without warranty as
+   described in the Simplified BSD License.
+
+
+Table of Contents
+
+   1.  Introduction . . . . . . . . . . . . . . . . . . . . . . . . .  4
+     1.1.  Terminology  . . . . . . . . . . . . . . . . . . . . . . .  4
+   2.  Definitions  . . . . . . . . . . . . . . . . . . . . . . . . .  4
+     2.1.  Terms for describing authentication protocol flow  . . . .  4
+     2.2.  Syntax Notation  . . . . . . . . . . . . . . . . . . . . .  7
+   3.  Optional Authentication  . . . . . . . . . . . . . . . . . . .  8
+     3.1.  Note on Optional-WWW-Authenticate and use of
+           WWW-Authenticate header with non-401 status  . . . . . . . 10
+   4.  Authentication-Control header  . . . . . . . . . . . . . . . . 11
+     4.1.  Non-ASCII extended header parameters . . . . . . . . . . . 12
+     4.2.  Auth-style parameter . . . . . . . . . . . . . . . . . . . 13
+     4.3.  Location-when-unauthenticated parameter  . . . . . . . . . 14
+     4.4.  No-auth parameter  . . . . . . . . . . . . . . . . . . . . 15
+     4.5.  Location-when-logout parameter . . . . . . . . . . . . . . 15
+     4.6.  Logout-timeout parameter . . . . . . . . . . . . . . . . . 16
+     4.7.  Username parameter . . . . . . . . . . . . . . . . . . . . 17
+   5.  Usage examples . . . . . . . . . . . . . . . . . . . . . . . . 18
+     5.1.  Example 1: a portal site . . . . . . . . . . . . . . . . . 18
+       5.1.1.  Case 1: a simple application . . . . . . . . . . . . . 19
+       5.1.2.  Case 2: specific action required on log-out  . . . . . 19
+       5.1.3.  Case 3: specific page displayed before log-in  . . . . 19
+     5.2.  Example 2: authenticated user-only sites . . . . . . . . . 20
+     5.3.  When to use Cookies  . . . . . . . . . . . . . . . . . . . 20
+     5.4.  Parallel deployment with Form/Cookie authentication  . . . 21
+   6.  Methods to extend this protocol  . . . . . . . . . . . . . . . 22
+   7.  IANA Considerations  . . . . . . . . . . . . . . . . . . . . . 22
+   8.  Security Considerations  . . . . . . . . . . . . . . . . . . . 23
+     8.1.  Security implication of the username parameter . . . . . . 24
+   9.  References . . . . . . . . . . . . . . . . . . . . . . . . . . 24
+     9.1.  Normative References . . . . . . . . . . . . . . . . . . . 24
+     9.2.  Informative References . . . . . . . . . . . . . . . . . . 25
+   Appendix A.  (Informative) Applicability of features for each
+
+
+Oiwa, et al.             Expires March 21, 2017                 [Page 2]
+Internet-Draft   HTTP Auth. Ext. for Interactive Clients  September 2016
+
+
+                messages  . . . . . . . . . . . . . . . . . . . . . . 25
+   Appendix B.  (Informative) Draft Change Log  . . . . . . . . . . . 26
+     B.1.  Changes in Httpauth WG Revision 09 . . . . . . . . . . . . 26
+     B.2.  Changes in Httpauth WG Revision 08 . . . . . . . . . . . . 26
+     B.3.  Changes in Httpauth WG Revision 07 . . . . . . . . . . . . 26
+     B.4.  Changes in Httpauth WG Revision 06 . . . . . . . . . . . . 26
+     B.5.  Changes in Httpauth WG Revision 05 . . . . . . . . . . . . 26
+     B.6.  Changes in Httpauth WG revision 04 . . . . . . . . . . . . 27
+     B.7.  Changes in Httpauth WG revision 03 . . . . . . . . . . . . 27
+     B.8.  Changes in Httpauth WG revision 02 . . . . . . . . . . . . 27
+     B.9.  Changes in Httpauth WG revision 01 . . . . . . . . . . . . 27
+     B.10. Changes in Httpauth revision 00 and HttpBis revision 00  . 27
+     B.11. Changes in revision 02 . . . . . . . . . . . . . . . . . . 27
+     B.12. Changes in revision 01 . . . . . . . . . . . . . . . . . . 27
+     B.13. Changes in revision 00 . . . . . . . . . . . . . . . . . . 27
+   Authors' Addresses . . . . . . . . . . . . . . . . . . . . . . . . 28
+
+Oiwa, et al.             Expires March 21, 2017                 [Page 3]
+Internet-Draft   HTTP Auth. Ext. for Interactive Clients  September 2016
+
+
+1.  Introduction
+
+   This document defines several extensions to the current HTTP
+   authentication framework, to provide functionality comparable with
+   current widely-used form-based Web authentication.  A majority of the
+   recent websites on the Internet use custom application-layer
+   authentication implementations using Web forms.  The reasons for
+   these may vary, but many people believe that the current HTTP Basic
+   and Digest authentication methods do not have enough functionality
+   (including good user interfaces) to support most realistic Web-based
+   applications.  However, such use of form-based Web authentication has
+   several weakness against attacks like phishing, because all behavior
+   of the authentication is controlled from the server-side application.
+   This makes it really hard to implement any cryptographically strong
+   authentication mechanisms into Web systems.  To overcome this
+   problem, we need to "modernize" the HTTP authentication framework so
+   that better client-controlled secure methods can be used with Web
+   applications.  The extensions proposed in this document include:
+
+   o  optional authentication on HTTP (Section 3),
+
+   o  log out from both server and client side (Section 4), and
+
+   o  finer control for redirection depending on authentication status
+      (Section 4).
+	  
+   本文档定义了当前HTTP认证框架的几个扩展，提供了与当前广泛使用的基于表单的web认证相当的功能。
+   现今的大部分互联网网站都是通过使用web表单来实现自定义的应用程序实现。理由有很多，
+   但是大多数人相信当前HTTP基础式的的和摘要式的认证方法没有足够的功能（包括良好的用户界面）来支持基于Web的应用程序。
+   然而，这些基于表单的web认证，在面对攻击下有许多的不足，像网络钓鱼，因为所有的认证行为都被服务器端的应用所掌控。
+   也就使得实现web系统中强加密的身份认证机制变得很困难。为了克服这一困难，我们需要改进HTTP认证框架，
+   使客户端控制的安全方法能够被用到web应用。本文提出的扩展包括以下几点：
+   
+   o  选择性HTTP身份认证。（第三部分）
+   
+   o  同时从服务器端和客户端登出。（第四部分）
+   
+   o  基于认证状态的更精细的重定向控制。（第四部分）
+	  
+	  
+1.1.  Terminology
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in
+   [RFC2119].
+
+   This document distinguishes the terms "client" and "user" in the
+   following way: A "client" is an entity understanding and talking HTTP
+   and the specified authentication protocol, usually computer software;
+   a "user" is a (usually natural) person who wants to access data
+   resources using "a client".
+
+   关键字“必须”，“不得”，“必须”，“应该”，“不应该”，“应该”，“不应该”，“推荐”，“不推荐”，“可能” “可选择”
+   在本文档中的解释如同RFC2119中。
+   
+   该文档通过以下方式区分术语“客户端”和“用户”：客户端是理解并且讨论HTTP和指定认证协议的实体，
+   通常试试计算机软件；“用户”是指想要通过客户端获取数据的人。
+   
+2.  Definitions
+
+2.1.  Terms for describing authentication protocol flow
+
+   HTTP Authentication defined in [RFC7235] can involve several pairs of
+   HTTP requests/responses.  Throughout this document, the following
+   terms are used to categorize those messages: for requests,
+
+   [RFC7235]中定义的HTTP认证可以涉及几对HTTP请求/响应。 在本文档中，使用以下术语来对这些消息进行分类：
+   对于请求，
+
+
+Oiwa, et al.             Expires March 21, 2017                 [Page 4]
+Internet-Draft   HTTP Auth. Ext. for Interactive Clients  September 2016
+
+
+   1) A non-authenticating request is a request not attempting any
+      authentication: a request without any Authorization header field.
+
+   2) An authenticating request is the opposite: a request with an
+      Authorization header field.
+	  
+   1) 非认证请求是不尝试任何认证的请求：没有任何授权的头部字段的请求。
+   
+   2) 验证请求是相反的：具有授权报头字段的请求。
+
+   For responses,
+
+   1) A non-authenticated response is a response which does not involve
+      any HTTP authentication.  It does not contain any WWW-Authenticate
+      ([RFC7235]) or Authentication-Info header field ([RFC7615]).
+
+      Servers send this response when the requested resource is not
+      protected by an HTTP authentication mechanism.  In context of this
+      specification, non-authentication-related negative responses (e.g.
+      403 and 404) are also considered non-authenticated responses.
+
+      (See note on successfully-authenticated responses below for some
+      ambiguous cases.)
+	  
+   1) 非认证响应是不涉及任何HTTP认证的响应。 它不包含任何WWW认证（[RFC7235]）或认证信息报头字段（[RFC7615]）。
+	  当请求的资源不受HTTP认证机制保护时，服务器发送此响应。 
+	  在本说明书的上下文中，非认证相关的否定响应（例如403和404）也被认为是非认证响应。
+	  (有关不明确的情况，请参阅以下关于成功验证的响应的说明。)
+	  
+   2) An authentication-initializing response is a response which
+      requires or allows clients to start authentication attempts.
+      Servers send this response when the requested resource is
+      protected by HTTP authentication mechanism, and the request meets
+      one of the following cases:
+
+      *  The request is a non-authenticating request, or
+
+      *  The request contained an authentication trial directed to a
+         protection space (realm) other than the one the server
+         expected.
+
+      The server will specify the protection space for authentication in
+      this response.
+
+      Upon receiving this response, the client's behavior is further
+      divided to two possible cases.
+
+      *  If the client has no prior knowledge on authentication
+         credentials (e.g. a user-name and a password) related to the
+         requested protection space, the protocol flow terminates and
+         the client will ask the user to provide authentication
+         credentials,
+
+      *  On the other hand, if client already has enough authentication
+         credentials to the requested protection space, the client will
+         automatically send an authenticating request.  Such cases often
+         occur when the client did not know beforehand that the current
+		 
+   2)   认证初始化响应是一种要求或允许客户端开始尝试认证的响应。
+		当请求的资源受HTTP认证机制保护时，服务器发送此响应，并且请求满足以下情况之一：
+		* 这个请求是一个非认证请求，或者
+		* 该请求包含一个针对保护空间的认证实验，而这个保护空间不在服务器期望的保护空间（领域）的范围之内。
+		
+		服务器将在此响应中指定用于认证的保护空间。
+		
+		在接收到该响应时，客户端的行为被进一步划分为两种可能的情况。
+		* 如果客户端没有与所请求的保护空间相关的认证证书（例如用户名和密码）的现有信息，则协议流程终止，并且客户端将要求用户提供认证证书，
+		* 另一方面，如果客户端已经有了与所请求的保护空间相关的认证证书，客户端将自动的发送认证请求。这种情况经常发生在客户端事先不知道当前
+		请求的URL是需要认证的。
+		
+
+Oiwa, et al.             Expires March 21, 2017                 [Page 5]
+Internet-Draft   HTTP Auth. Ext. for Interactive Clients  September 2016
+
+
+         request-URL requires authentication.
+
+   3) A successfully-authenticated response is a response for an
+      authenticating request meaning that the authentication attempt was
+      granted.  (Note: if the authentication scheme used does not use an
+      Authentication-Info header field, it can't be distinguished from a
+      non-authenticated response.)
+	  
+   3) 成功认证的响应实际是认证请求的响应，这意味着认证尝试是合法的。（注意：如果认证方案没有使用Authentication-Info这个头部字段，
+   那么它将不能和非认证响应区分开来。）
+
+   4) An intermediate authenticating response is a response for an
+      authenticating request which requires more reaction by the client
+      software without involving users.  Such a response is required
+      when an authentication scheme requires two or more round-trip
+      messages to perform authentication, or when an authentication
+      scheme uses some speculative short-cut method (such as uses of
+      cached shared secrets) and it failed.
+	  
+   4) 中间认证响应是对于认证请求的响应，这个响应需要客户端软件的更多支持而不涉及到用户。
+
+   5) A negatively-authenticated response is a response for an
+      authenticating request which means that the authentication attempt
+      was declined and can not continue without a different set of
+      authentication credentials.  Clients typically erase memory of the
+      active credentials and ask the user for other ones.
+	  
+   5) 否定认证响应式对一个认证请求的响应，这意味着认证尝试是被拒绝的，并且在没有不同的认证证书集合的情况下是不能继续执行的。
+   客户端会周期性的擦除活跃认证的内存信息，并且要求用户提供其他凭证。
+
+      Usually the format of these responses are as same as the one for
+      authentication-initializing responses.  Clients can distinguish
+      negatively-authenticated responses from authentication-
+      initializing responses by comparing the protection spaces
+      contained in the request and in the response.
+	  
+	  通常这些响应的格式与认证初始化响应的格式相同。
+	  客户端可以通过比较请求中和响应中包含的保护空间来区分负认证响应和认证初始化响应。
+
+   Figure 1 shows a state diagram of generic HTTP authentication with
+   the above message categorization.  Note that many authentication
+   schemes use only a subset of the transitions described on the
+   diagram.  Labels in the figure show the abbreviated names of response
+   types.
+   
+   图1示出了具有上述消息分类的通用HTTP认证的状态图。 
+   注意，许多认证方案仅使用图上描述的转换的子集。 
+   图中的标签显示响应类型的缩写名称。
+
+Oiwa, et al.             Expires March 21, 2017                 [Page 6]
+Internet-Draft   HTTP Auth. Ext. for Interactive Clients  September 2016
+
+
+         ===========                                -----------------
+         NEW REQUEST                               ( UNAUTHENTICATED )
+         ===========                                -----------------
+              |                                            ^ non-auth.
+              v                                            | response
+   +----------------------+ NO                         +-------------+
+   | The requested URI    |--------------------------->| send normal |
+   | known to be auth'ed? |           ---------------->|   request   |
+   +----------------------+          /                 +-------------+
+          YES |                     /             initializing|
+              v                    /                          |
+     +------------------+ NO      /                           |
+     | Can auth-req.(*1)|---------                            |
+     | be constructed?  |                                     |
+     +------------------+                                     |
+          YES |            initializing                       |
+              |      ---------------------------------------. |
+              |     /                                       v v
+              |    |            ----------------    NO  +-----------+
+              |    |           ( AUTH-REQUESTED )<------| passwords |
+              |    |            ----------------        |etc. known?|
+              v    |                                    +-----------+
+        +-----------+ negative   -------------   negative     |YES
+        |   send    |---------->( AUTH-FAILED )<---------,    |
+       /| auth-req  |            -------------           |    |
+      / +-----------+\                                   |    v
+     |             \  \  intermediate                   +-----------+
+     |              \  -------------------------------->|   send    |
+     |               \                                  | auth-req  |
+     | non-auth.      \successful            successful +-----------+
+     | response (*2)   \                               /     |    ^
+     v                  \                             /      |    |
+    -----------------    \       --------------      /       `----'
+   ( UNAUTHENTICATED )    ----->( AUTH-SUCCEED )<----    intermediate
+    -----------------            --------------
+
+
+          Figure 1: Generic state diagram for HTTP authentication
+
+   Note: (*1) For example, "Digest" scheme requires server-provided
+   nonce to construct client-side challenges.
+   (*2) In "Basic" and some others, this cannot be distinguished from a
+   successfully-authenticated response.
+
+   注意：（* 1）例如，“Digest”方案需要服务器提供的nonce来构造客户端挑战。
+  （* 2）在“Basic”和其他一些方面，这不能与成功认证的响应区分开来。
+   
+2.2.  Syntax Notation
+
+   This specification uses an extended ABNF syntax defined in [RFC7230]
+   and [RFC5234].  The following syntax definitions are quoted from
+
+Oiwa, et al.             Expires March 21, 2017                 [Page 7]
+Internet-Draft   HTTP Auth. Ext. for Interactive Clients  September 2016
+
+
+   [RFC7230] and [RFC7235]: auth-scheme, quoted-string, auth-param, SP,
+   BWS, header-field, and challenge.  It also uses the convention of
+   using header field names for specifying the syntax of values for the
+   header field.
+
+   本规范使用[RFC7230]和[RFC5234]中定义的扩展ABNF语法。
+   下列的语法定义引自[RFC7230][RFC7235]:auth-scheme, quoted-string, auth-param, SP,
+   BWS, header-field, and challenge。它还使用了一种语法，这种语法是利用头字段名来指定
+   头字段值。
+   
+   Additionally, this specification uses the following syntax
+   definitions as a refinement for token and the right-hand-side of
+   auth-param in [RFC7235].
+   
+   此外，本规范使用以下语法定义作为标记的细化以及auth-param的右侧。
+
+    bare-token           = bare-token-lead-char *bare-token-char
+    bare-token-lead-char = %x30-39 / %x41-5A / %x61-7A
+    bare-token-char      = %x30-39 / %x41-5A / %x61-7A / "-" / "_"
+    extension-token      = "-" bare-token 1*("." bare-token)
+    extensive-token      = bare-token / extension-token
+    integer              = "0" / (%x31-39 *%x30-39)  ; no leading zeros
+
+               Figure 2: the BNF syntax for common notations
+
+   Extensive-tokens are used in this protocol where the set of
+   acceptable tokens includes private extensions.  Any extensions of
+   this protocol MAY use either bare-tokens allocated by IANA (under the
+   procedure described in Section 7), or extension-tokens with the
+   format "-<token>.<domain-name>", where <domain-name> is a valid
+   (sub-)domain name on the Internet owned by the party who defines the
+   extension.
+
+   在该协议中使用扩展令牌，其中可接受令牌的集合包括私有扩展。
+   该协议的任何扩展可以使用IANA分配的裸令牌（按照第7节中描述的过程），
+   或者使用格式为“ - <token>。<domain-name>”的扩展令牌，
+   其中<domain-name> 是一个Internet上的有效（子）域名，该域名由定义扩展名的一方所拥有。
+
+3.  Optional Authentication
+
+   The Optional-WWW-Authenticate header enables a non-mandatory
+   authentication, which is not possible under the current HTTP
+   authentication mechanism.
+   
+   Optional-WWW-Authenticate头字段可以启用非强制性身份验证，
+   这在当前的HTTP身份验证机制下是不可能的。
+
+   In several Web applications, users can access the same contents as
+   both a guest user and an authenticated user.  In most Web
+   applications, this functionality is implemented using HTTP cookies
+   [RFC6265] and custom form-based authentication.  The new
+   authentication method using this message will provide a replacement
+   for these authentication systems.
+
+   在多个Web应用程序中，用户可以访问的内容与访客用户和验证用户相同。 
+   在大多数Web应用程序中，此功能是通过使用HTTP cookie [RFC6265]和自定义的基于表单的身份验证来实现的。
+   使用这种消息的新认证方法将替代这些老式的认证系统。
+   
+   Servers MAY send HTTP non-interim responses containing the
+   Optional-WWW-Authenticate header as a replacement of a 401 response
+   when it is authentication-initializing.  The
+   Optional-WWW-Authenticate header MUST NOT be sent on 401 responses
+   (i.e. a usual WWW-Authenticate header MUST be used on 401 responses).
+	
+	当认证初始化时，服务器可以发送包含Optional-WWW-Authenticate头的HTTP非临时响应作为401响应的替代。 
+	可选的WWW认证报头不能在401响应上发送（即，必须在401响应上使用通常的WWW认证报头）。
+	
+    Optional-WWW-Authenticate = 1#challenge
+
+
+Oiwa, et al.             Expires March 21, 2017                 [Page 8]
+Internet-Draft   HTTP Auth. Ext. for Interactive Clients  September 2016
+
+
+         Figure 3: BNF syntax for Optional-WWW-Authenticate header
+
+      Example:
+      HTTP/1.1 200 OK
+      Optional-WWW-Authenticate: Basic realm="xxxx"
+
+   The challenges contained in the Optional-WWW-Authenticate header are
+   the same as those for a 401 responses corresponding to the same
+   request.  For authentication-related matters, an optional
+   authentication request will have the same meaning as a 401 message
+   with a corresponding WWW-Authenticate header (as an authentication-
+   initializing response).  (The behavior for other matters MAY be
+   different between the optional authentication and 401 messages.  For
+   example, clients MAY choose to cache the 200 messages with
+   Optional-WWW-Authenticate header field but not the 401 messages by
+   default.)
+   
+   Optional-WWW-Authenticate头中包含的挑战与对应于相同请求的401响应的挑战相同。 
+   对于认证相关事务，可选认证请求将与具有对应WWW认证报头（作为认证初始化响应）的401消息相同的含义。 
+   （其他事项的行为可能会在可选认证和401消息之间有所不同，
+   例如，客户端可以选择使用Optional-WWW-Authenticate头字段缓存200条消息，
+   而不是通过default来缓存401消息）。
+
+   A response with an Optional-WWW-Authenticate header SHOULD be
+   returned from the server only when the request is either non-
+   authenticated or authenticating to a wrong (not the server's
+   expected) protection space.  If a response is either an intermediate
+   or a negative response to a client's authentication attempt, the
+   server MUST respond with a 401 status response with a
+   WWW-Authenticate header instead.  Failure to comply with this rule
+   will render clients unable to distinguish authentication successes
+   and failures.
+   
+   只有当请求未经验证或认证到错误（而不是服务器的预期）保护空间时，
+   才会从服务器返回具有可选WWW验证头的响应。 
+   如果响应是对客户端认证尝试的中间响应或否定响应，
+   则服务器务必使用具有WWW认证报头的401状态响应来响应。 
+   不遵守此规则将使客户无法区分认证成功和失败。
+
+   The server is NOT RECOMMENDED to include an Optional-WWW-Authenticate
+   header in a positive response when a client's authentication attempt
+   succeeds.
+   
+   当客户端的身份验证尝试成功时，服务端不推荐在正确响应中包含可选WWW身份验证头。
+   
+   Whenever an authentication scheme supports servers sending some
+   parameter which gives a hint of the URL space for the corresponding
+   protection space for the same realm (e.g. "path" or "domain"),
+   servers requesting non-mandatory authentication SHOULD send such
+   parameter with the response.  Clients supporting non-mandatory
+   authentication MUST recognize the parameter, and MUST send a request
+   with an appropriate authentication credential in an Authorization
+   header for any URI inside the specified paths.
+
+   每当认证方案支持服务器发送一些参数，该参数给出一些URL空间的提示，
+   这些空间主要用于相同领域（例如，路径和域）的相应保护空间。
+   请求非强制认证的服务器应当将该参数加入到响应中 。 
+   支持非强制身份验证的客户端必须识别参数，
+   并且必须在指定路径中的任何URI的授权头中发送带有适当认证凭证的请求。
+   
+   Implementations are not required to support this header for all of
+   their supported authentication schemes (i.e., they may choose to
+   implement it only for a subset of their supported schemes).  New
+   authentication schemes can require support of the optional
+   authentication as a prerequisite, though.
+
+   实现不需要为所有他们支持的认证方案支持这个报头
+   （即，它们可以在支持的方案中选择一个子集来实现它）。 
+   然而，新的认证方案可能需要支持可选认证作为先决条件。
+
+Oiwa, et al.             Expires March 21, 2017                 [Page 9]
+Internet-Draft   HTTP Auth. Ext. for Interactive Clients  September 2016
+
+
+3.1.  Note on Optional-WWW-Authenticate and use of WWW-Authenticate
+      header with non-401 status
+
+	  关于可选WWW的注意 - 验证和使用非401状态的WWW-Authenticate头
+	  
+   In the current specification of HTTP/1.1, it is clarified that the
+   WWW-Authenticate header can be used with messages with status codes
+   other than 401 (Authentication Required).  Especially, the use of
+   WWW-Authenticate header with the 200 status messages implies a very
+   similar meaning to the above-defined Optional-WWW-Authenticate
+   header.
+   
+   在HTTP / 1.1的当前规范中，阐明了WWW-Authenticate头可以用于状态代码
+   不是401（需要认证）的消息中。 特别地，使用具有200个状态消息的
+   WWW-Authenticate报头意味着与上面定义的Optional-WWW-Authenticate报头具有非常相似的含义。
+
+   The design of Optional-WWW-Authenticate header expects that the use
+   of a new header guarantees that clients which are unaware of this
+   extension will ignore the header, and that Web developers can rely on
+   that behavior to implement a secondary fallback method of
+   authentication.  Several behavioral requirements written in the above
+   section also assumes this property, and defines a necessary
+   functionality to implement an HTTP optional authentication reliably
+   and consistently.
+
+   Optional-WWW-Authenticate头的设计期望使用新的头来保证不知道这个扩展的客户端能够忽略该头，
+   并且Web开发人员可以依靠该行为来实现认证的辅助回退方法。 
+   上述部分中编写的几个行为要求也假定了此属性，
+   并定义了可靠且一致的能够实现HTTP可选认证的必要功能。
+   
+   On the other hand, some experiments and discussions on the IETF
+   mailing list revealed that most of (but not necessarily all of) the
+   existing HTTP clients, at the time of writing, just ignore the WWW-
+   Authenticate headers in non-401 messages, giving the similar behavior
+   with the Optional-WWW-Authenticate.  However, every corner case of
+   behavior was not fully tested, nor well-defined in the existing
+   specifications.
+
+   另一方面，关于IETF邮件列表的一些实验和讨论显示，在撰写本文时，
+   大多数（但不一定是所有）现有的HTTP客户端仅忽略非401邮件中的WWW-Authenticate头， 
+   与Optional-WWW-Authenticate的类似行为。 
+   然而，每个行为的边界情况没有被完全测试，也没有在现有规范中明确定义。
+   
+   Considering these situations, the authors of this document chose to
+   use a new header for a new feature "experiment".  This is to avoid
+   defining every corner-case behavior for the existing standard WWW-
+   Authentication header in this experimental document, which could be
+   considered by some implementers as an "incompatible changes to
+   existing specification".
+
+   考虑到这些情况，本文档的作者选择使用一个新的标题为一个新的功能“实验”。 
+   这是为了避免定义本实验文档中现有标准WWW认证头的每个边界行为，
+   而这些边界行为被一些实现者认为是“对现有规范的不兼容更改”。
+   
+   Experimentally, the authors propose implementers of the standard
+   HTTP/1.1 specification (especially implementers of this extension) to
+   implement undefined (implementation-dependant) detailed handling of
+   WWW-Authenticate header with non-401 status messages as similar as
+   those defined above for the Optional-WWW-Authenticate header.  For
+   example, we propose for servers to return 401 status for failed
+   authentication attempts, even when the unauthenticated request to the
+   same resource will result in the 200 status.  This can realize how
+   (whether) we can implement non-mandatory authentication using the
+   standard header fields and status codes.  If this experiment is
+   successful, the future revision of this experimental document may
+   "bless" and recommend the use of standard WWW-Authenticate header,
+   with some "standard-level" requirements on some corner case behavior.
+
+   实验上，作者提出标准HTTP / 1.1规范（特别是这个扩展的实现者）的实现者
+   来完成未定义（依赖于实现）的WWW-Authenticate头的详细细节，
+   非401状态的WWW认证头消息类似于上面提到的可选WWW验证头。 
+   例如，我们建议服务器为失败的身份验证尝试返回401状态，
+   即使是以前能够返回200状态的请求同一资源，但是未经身份认证的这种请求。
+   这可以实现如何（是否）通过使用标准报头字段和状态代码来实现非强制性认证。 
+   如果这个实验成功，这个实验文档的未来版本可能会“祝福”，
+   和建议使用标准的WWW-Authenticate头，并且对某些边界情况行为会有一些“标准级”要求。
+
+
+Oiwa, et al.             Expires March 21, 2017                [Page 10]
+
+Internet-Draft   HTTP Auth. Ext. for Interactive Clients  September 2016
+
+
+4.  Authentication-Control header
+
+	认证-控制头
+	
+    Authentication-Control = 1#auth-control-entry
+    auth-control-entry     = auth-scheme 1*SP 1#auth-control-param
+    auth-control-param     = extensive-token BWS "=" BWS token
+                           / extensive-token "*" BWS "=" BWS ext-value
+    ext-value              = <see RFC 5987, Section 3.2>
+
+      Figure 4: the BNF syntax for the Authentication-Control header
+
+   The Authentication-Control header provides a more precise control of
+   the client behavior for Web applications using an HTTP authentication
+   protocol.  This header is supposed to be generated in the application
+   layer, as opposed to WWW-Authenticate headers which will usually be
+   generated by the Web servers.
+   
+   认证-控制头通过使用HTTP认证协议来提供对Web应用程序客户端行为的更精确的控制。 
+   这个头部应该在应用层中生成，而不是通常由Web服务器生成的WWW-Authenticate头部。
+
+   Clients MAY freely choose any subset of these parameters to be
+   supported.  Also, these are not required to support any of these
+   parameters for all of their supported authentication schemes.
+   However, authentication schemes can require/recommend support for
+   some of these parameters as a prerequisite.
+
+   客户可以自由选择要支持的这些参数的任何子集。 
+   此外，不需要为了这些受支持的认证方案来支持任何这些参数。 
+   然而，认证方案可以要求/推荐支持这些参数中的一些作为先决条件。
+   
+   The Authentication-Control header contains one or more
+   "authentication control entries" each of which corresponds to a
+   single realm for a specific authentication scheme.  If the
+   auth-scheme specified for an entry supports the HTTP "realm" feature,
+   that entry MUST contain the "realm" parameter.  If not, the entry
+   MUST NOT contain the "realm" parameter.
+
+   认证控制报头包含一个或多个“认证控制条目”，
+   每个“认证控制条目”对应于特定认证方案的单个领域。 
+   如果为条目指定的auth-scheme支持HTTP“realm”功能，
+   则该条目必须包含“realm”参数。 如果不是，条目不能包含“realm”参数。
+   
+   Among the multiple entries in the header, the relevant entries in the
+   header are those corresponding to an auth-scheme and a realm (if
+   any), for which "the authentication process is being performed, or
+   going to be performed".  In more detail,
+
+   在报头中的多个条目中，报头中的相关条目是对应于“正在执行或正在执行认证处理
+   ”的auth-scheme和领域（如果有的话）的那些条目。 更详细地，
+   
+   (1)  If the response is either an authentication-initializing
+        response or a negatively-authenticated response, there can be
+        multiple challenges in the WWW-Authenticate header (or the
+        Optional-WWW-Authenticate header defined in this extension),
+        each of which corresponds to a different scheme and realm.  In
+        this case, the client has a choice on the scheme and realm they
+        will use to authenticate.  Only the entry in the
+        Authentication-Control header corresponding to that scheme and
+        realm are relevant.
+
+		如果响应是认证初始化的响应或认证失败的响应，
+		则在WWW认证报头（或在此扩展中定义的可选-WWW认证报头）中可能存在多个挑战，
+		每个挑战对应于不同的方案和领域。 在这种情况下，
+		客户端可以选择他们将使用的方案和领域来进行身份验证。 
+		只有与该方案和领域相对应的认证控制报头中的这些条目才是相关的。
+		
+   (2)  If the response is either an intermediate authenticating
+        response or a successfully-authenticated response, the scheme
+        and realm given in the Authorization header of the HTTP request
+        will determine the currently-ongoing authentication process.
+
+Oiwa, et al.             Expires March 21, 2017                [Page 11]
+
+Internet-Draft   HTTP Auth. Ext. for Interactive Clients  September 2016
+
+
+        Only the entry corresponding to that scheme and realm are
+        relevant.
+		
+		如果响应是中间认证响应或成功认证的响应，
+		则HTTP请求的授权报头中给出的方案和领域将确定当前正在进行的认证过程。
+		只有与该方案和领域相对应的这些条目才是相关的。
+
+   The server MAY send an Authentication-Control header containing non-
+   relevant entries.  The client MUST ignore all non-relevant entries it
+   received.
+
+   服务器可以发送包含不相关条目的认证控制报头。 
+   客户端必须忽略它接收的所有不相关的条目。
+   
+   Each entry contains one or more parameters, each of which is a name-
+   value pair.  The name of each parameter MUST be an extensive-token.
+   Clients MUST ignore any unknown parameters contained in this header.
+   The entries for the same auth-scheme and the realm MUST NOT contain
+   duplicated parameters for the same name.  Clients MAY either take any
+   one of those duplicated entries or ignore all of them.
+
+   每个条目包含一个或多个参数，每个参数是一个键值对。 
+   每个参数的名称必须是扩展令牌。客户端必须忽略包含在此头中的任何未知参数。
+   相同auth-scheme和realm的条目不能包含相同名称的重复参数。 
+   客户端可以获取这些重复条目中的任何一个或忽略所有这些条目。
+   
+   The type of parameter value depends on the parameter name as defined
+   in the following subsections.  Regardless of the type, however, the
+   recipients MUST accept both quoted and unquoted representations of
+   values as defined in HTTP.  If the parameter is defined to have a
+   string value, implementations MUST send any value outside of the
+   "token" ABNF syntax in either a quoted form or an an ext-value form
+   (see Section 4.1).  If the parameter is defined as a token (or
+   similar) or an integer, the value SHOULD follow the corresponding
+   ABNF syntax after possible unquoting of the quoted-string value (as
+   defined in HTTP), and MUST be sent in a plain (not an ext-value)
+   form.  (Note: the rest of this document will show all string-value
+   parameters in quoted forms, and others in unquoted forms.)
+   
+   参数值的类型取决于在以下子节中定义的参数名称。 
+   然而，不管类型如何，收件人必须接受HTTP中定义的值的引用和非引用表示。 
+   如果参数定义为字符串值，则实现必须以引号形式或ext-value形式（参见第4.1节）
+   发送“token”ABNF语法之外的任何值。 如果参数被定义为令牌（或类似的）或整数，
+   那么在可能取消引用的字符串值（如在HTTP中定义）之后，
+   值应该遵循相应的ABNF语法，并且必须以文本（不是 ext-value）形式。 
+   （注意：本文档的其余部分将以引号形式显示所有字符串值参数，其他以不带引号的形式显示。）
+
+   Any parameters contained in this header MAY be ignored by clients.
+   Also, even when a client accepts this header, users are able to
+   circumvent the semantics of this header.  Therefore, if this header
+   is used for security purposes, its use MUST be limited to providing
+   some non-fundamental additional security measures valuable for end-
+   users (such as client-side log-out for protecting against console
+   takeover).  Server-side applications MUST NOT rely on the use of this
+   header for protecting server-side resources.
+
+   客户端可以忽略此头部中包含的任何参数。 
+   此外，即使客户端接受此头，用户也能够绕过此头的语义。 
+   因此，如果此标头用于安全目的，其使用必须仅限于提供对最终用户有价值的一些非基本附加安全措施
+   （例如，用于防止控制台接管的客户端注销）。 
+   服务器端应用程序不能依赖于这个头部的使用来保护服务器端资源。
+   
+   Note: The header syntax allows servers to specify Authentication-
+   Control for multiple authentication schemes, either as multiple
+   occurrences of this header or as a combined single header (see
+   Section 3.2.2 of [RFC7230] for rationale).  The same care as for
+   parsing multiple authentication challenges needs to be taken.
+
+   注意：报头语法要么允许服务器为多个认证方案指定认证控制，
+   要么作为此报头的多次出现或作为一个组合型的单报头（参见[RFC7230]的第3.2.2节的原理）。 
+   需要共同关注的是如何解析多个认证挑战。
+   
+4.1.  Non-ASCII extended header parameters
+
+   Parameters contained in the Authentication-Control header MAY be
+   extended to non-ASCII values using the framework described in
+   [RFC5987].  All servers and clients MUST be capable of receiving and
+   sending values encoded in [RFC5987] syntax.
+
+   包含在认证控制报头中的参数可以使用[RFC5987]中描述的框架并扩展到非ASCII值。 
+   所有服务器和客户端必须能够接收和发送以[RFC5987]语法编码的值。...
+
+Oiwa, et al.             Expires March 21, 2017                [Page 12]
+
+Internet-Draft   HTTP Auth. Ext. for Interactive Clients  September 2016
+
+
+   If a value to be sent contains only ASCII characters, the field MUST
+   be sent using plain RFC 7235 syntax.  The syntax as extended by ext-
+   value MUST NOT be used in this case.
+
+   如果要发送的值仅包含ASCII字符，则必须使用纯RFC 7235语法发送字段。 
+   在这种情况下，绝对不能使用ext-value扩展的语法。
+   
+   If a value (except the "realm" header) contains one or more non-ASCII
+   characters, the parameter SHOULD be sent using the ext-value syntax
+   defined in Section 3.2 of [RFC5987].  Such a parameter MUST have a
+   charset value of "UTF-8", and the language value MUST always be
+   omitted (have an empty value).  The same parameter MUST NOT be sent
+   more than once, regardless of the used syntax.
+
+   如果一个值（除了“realm”头部）包含一个或多个非ASCII字符，
+   那么该参数应该使用[RFC5987]第3.2节中定义的ext-value语法发送。 
+   这样的参数必须具有“UTF-8”的字符集值，并且语言值必须总是被省略（具有空值）。 
+   不管使用的语法如何，相同的参数绝不能多次发送。
+   
+   For example, a parameter "username" with value "Renee of France"
+   SHOULD be sent as < username="Renee of France" >.  If the value is
+   "Ren<e acute>e of France", it SHOULD be sent as
+   < username*=UTF-8''Ren%C3%89e%20of%20France > instead.
+
+   例如，具有值“Renee of France”的参数“username”应该被发送为
+   <username =“Renee of France”>。 
+   如果值为“Ren <e acute> e of France”，
+   则应该以<username * = UTF-8''Ren％C3％89e％20 of％20France>发送。
+   
+   Interoperability note: [RFC7235], Section 2.2, defines the "realm"
+   authentication parameter which cannot be replaced by the "realm*"
+   extend parameter.  It means that the use of non-ASCII values for an
+   authentication realm is not the defined behavior in HTTP.
+   Unfortunately, some people currently use a non-ASCII realm parameter
+   in reality, but even its encoding scheme is not well-defined.
+   Given this background, this document does not specify how to handle a
+   non-ASCII "realm" parameter in the extended header fields.  If
+   needed, the authors propose to use a non-extended "realm" parameter
+   form, with a wish for maximum interoperability.
+
+   互操作性注释：[RFC7235]，第2.2节，定义了不能被“realm *”扩展参数替换的“realm”认证参数。
+   这意味着将非ASCII值用于身份验证域不是HTTP中定义的行为。 
+   不幸的是，一些人目前在现实中使用非ASCII的realm参数，
+   但实际上它没有良好的编码定义方案。在这个背景下，
+   本文没有指定如何处理扩展头中的非ASCII“realm”参数 字段。 
+   如果需要，作者建议使用非扩展的“领域”参数形式，这样会有最大的互操作性。
+   
+4.2.  Auth-style parameter
+
+   Example:
+   Authentication-Control: Digest realm="protected space",
+           auth-style=modal
+
+   The parameter "auth-style" specifies the server's preference for user
+   interface behavior for user authentication.  This parameter can be
+   included in any kind of response, however, it is only meaningful for
+   either authentication-initializing or negatively-authenticated
+   responses.  The value of this parameter MUST be one of the bare-
+   tokens "modal" or "non-modal".  When the Optional-WWW-Authenticate
+   header is used, the value of this parameter MUST be disregarded and
+   the value "non-modal" is implied.
+
+   参数“auth-style”指定服务器对用户验证的用户界面行为的首选项。 
+   此参数可以包括在任何类型的响应中，但是，它只对认证初始化或否定认证响应有意义。 
+   该参数的值必须是裸模式“模态”或“非模态”的其中之一。 
+   当使用Optional-WWW-Authenticate头时，该参数的值必须被忽略，并且暗示“非模态”值。
+   
+   The value "modal" means that the server thinks the content of the
+   response (body and other content-related headers) is valuable only
+   for users refusing the authentication request.  The clients are
+   expected to ask the user for a password before processing the
+   content.  This behavior is common for most of the current
+   implementations of Basic and Digest authentication schemes.
+   
+   值“modal”意味着服务器认为响应的内容（主体和其他内容相关头部）
+   仅对拒绝认证请求的用户有价值。 客户端需要在处理内容之前询问用户密码。 
+   这种行为在当前大多数基本的和摘要的认证方案的实现中是常见的。
+   
+Oiwa, et al.             Expires March 21, 2017                [Page 13]
+
+Internet-Draft   HTTP Auth. Ext. for Interactive Clients  September 2016
+
+
+   The value "non-modal" means that the server thinks the content of the
+   response (body and other content-related headers) is valuable for
+   users before processing an authentication request.  The clients are
+   expected to first process the content and then provide users the
+   opportunity to perform authentication.
+
+   “非模态”值意味着在处理认证请求之前，
+   服务器认为响应的内容（主体和其他内容相关报头）对用户有价值。 
+   客户端应该首先处理内容，然后为用户提供执行身份验证的机会。
+   
+   The default behavior for clients is implementation-dependent, and it
+   may also depend on authentication schemes.  The proposed default
+   behavior is "modal" for all authentication schemes unless otherwise
+   specified.
+
+   客户端的默认行为是依赖于实现的，并且它还可以依赖于认证方案。 
+   除非另有说明，否则对于所有认证方案，所建议的默认行为是“模态的”。
+   
+   The above two different methods of authentication possibly introduce
+   a observable difference of semantics when the response contains
+   state-changing side effects; for example, it can affect how Cookie
+   headers [RFC6265] in 401 responses are processed.  However, the
+   server applications SHOULD NOT depend on existence of such side
+   effects.
+
+   当响应包含状态变化的副作用时，上述两种不同的认证方法可能引入可观察到的语义差异; 
+   例如，它可以影响如何处理401响应中的Cookie头[RFC6265]。 
+   然而，服务器应用程序不应该依赖于这样的副作用的存在。
+   
+4.3.  Location-when-unauthenticated parameter
+
+   Example:
+   Authentication-Control: Mutual realm="auth-space-1",
+       location-when-unauthenticated="http://www.example.com/login.html"
+
+   The parameter "location-when-unauthenticated" specifies a location
+   where any unauthenticated clients should be redirected to.  This
+   header can be used, for example, when there is a central login page
+   for the entire Web application.  The value of this parameter is a
+   string that contains an URL location.  If a received URL is not
+   absolute, the clients SHOULD consider it a relative URL from the
+   current location.
+
+   参数“location-when-unauthenticated”指定任何未认证的客户端将要重定向到的位置。 
+   例如，当存在整个Web应用程序的中央登录页面时，可以使用此标题。 
+   此参数的值是包含URL位置的字符串。 如果接收的URL不是绝对的，
+   客户端应该将其视为来自当前位置的相对URL。
+   
+   This parameter MAY be used with a 401 response for an authentication-
+   initializing response.  It can also be contained, although this is
+   NOT RECOMMENDED, in a positive response with an
+   Optional-WWW-Authenticate header.  The clients MUST ignore this
+   parameter when a response is either successfully-authenticated or
+   intermediately-authenticated.
+
+   此参数可以与401响应一起用于认证初始化响应。 
+   它也可以被包含在一个可选的WWW认证头的肯定响应，虽然并不推荐这种做法。
+   当响应是成功认证或中间认证时，客户端必须忽略此参数。
+   
+   When a client receives an authentication-initiating response with
+   this parameter, and if the client has to ask users for authentication
+   credentials, the client will treat the entire response as if it were
+   a 303 "See Other" response with a Location header that contains the
+   value of this parameter (i.e., client will be redirected to the
+   specified location with a GET request).  Unlike a normal 303
+   response, if the client can process authentication without the user's
+   interaction, this parameter MUST be ignored.
+
+   当客户端接收到具有此参数的身份验证初始化响应时，
+   并且此时如果客户端要求用户必须提供身份验证凭证，
+   则客户端会将整个响应视为303“其他”响应，其中的Location头包含该参数的值（
+   即，客户端将被重定向到具有GET请求的指定位置）。 与正常的303响应不同，
+   如果客户端可以在没有与用户交互的情况下处理该认证，则必须忽略此参数。
+
+
+Oiwa, et al.             Expires March 21, 2017                [Page 14]
+
+Internet-Draft   HTTP Auth. Ext. for Interactive Clients  September 2016
+
+
+4.4.  No-auth parameter
+
+   Example:
+   Authentication-Control: Basic realm="entrance", no-auth=true
+
+   The parameter "no-auth" is a variant of the
+   location-when-unauthenticated parameter; it specifies that new
+   authentication attempts are not to be performed on this location in
+   order to improve the user experience, without specifying the
+   redirection on the HTTP level.  This header can be used, for example,
+   when there is a central login page for the entire Web application,
+   and when an explicit user interaction with the Web content is desired
+   before authentication.  The value of this parameter MUST be a token
+   "true".  If the value is incorrect, client MAY ignore this parameter.
+
+   参数“no-auth”是参数“location-when-unauthenticated”的变体; 
+   它指定不要在此位置上执行新的身份验证尝试，以便改进用户体验，
+   而不在HTTP级别上指定重定向。 
+   例如，当存在用于整个Web应用的中央登录页面时，
+   以及当在认证之前需要与Web内容的显式用户交互时，可以使用该头部。 
+   此参数的值必须是标记“true”。 如果值不正确，则客户端可以忽略此参数。
+
+   
+   This parameter MAY be used with authentication-initiating responses.
+   It can also be contained, although this is NOT RECOMMENDED, in a
+   positive response with an Optional-WWW-Authenticate header.  The
+   clients MUST ignore this parameter when a response is either
+   successfully-authenticated or intermediately-authenticated.
+   
+   该参数可以与认证启动响应一起使用。它也可以包含，虽然这不是推荐的，
+   在具有可选-WWW认证报头的肯定响应中。 
+   当响应成功认证或中间认证时，客户端必须忽略此参数。
+   
+   When a client receives an authentication-initiating response with
+   this parameter, if the client has to ask users for authentication
+   credentials, the client will ignore the WWW-Authenticate header
+   contained in the response and treat the whole response as a normal
+   negative 4xx-class response instead of giving the user an opportunity
+   to start authentication.  If the client can process authentication
+   without the user's interaction, this parameter MUST be ignored.
+   
+   当客户端接收到具有此参数的认证启动响应时，
+   如果客户端必须要求用户获得认证凭证，
+   则客户端将忽略响应中包含的WWW-Authenticate头，
+   并将整个响应视为正常的负4xx类响应 而不是给予用户开始认证的机会。 
+   如果客户端可以在没有用户交互的情况下处理认证，则必须忽略此参数。
+
+
+   Using this parameter along with location-when-unauthenticated
+   parameter is meaningless.  If both were supplied, clients SHOULD
+   ignore the location-when-unauthenticated parameter.
+
+   使用此参数以及location-when-unauthenticated参数是无意义的。 
+   如果两者都提供，客户端应该忽略位置未认证参数。
+  
+   This parameter SHOULD NOT be used as a security measure to prevent
+   authentication attempts, as it is easily circumvented by users.  This
+   parameter SHOULD be used solely for improving user experience of Web
+   applications.
+   
+   此参数不应用作防止身份验证尝试的安全措施，
+   因为它很容易被用户规避。 此参数应该仅用于提高Web应用程序的用户体验。
+
+4.5.  Location-when-logout parameter
+
+   Example:
+   Authentication-Control: Digest realm="protected space",
+       location-when-logout="http://www.example.com/byebye.html"
+
+   The parameter "location-when-logout" specifies a location where the
+   client is to be redirected when the user explicitly requests a
+   logout.  The value of this parameter MUST be a string that contains
+   an URL location.  If a given URL is not absolute, the clients MUST
+
+   参数“location-when-logout”指定当用户明确请求注销时客户端将被重定向的位置。 此参数的值必须是包含URL位置的字符串。 如果给定的URL不是绝对的，客户端必须认为它是来自当前位置的相对URL。
+
+
+Oiwa, et al.             Expires March 21, 2017                [Page 15]
+
+Internet-Draft   HTTP Auth. Ext. for Interactive Clients  September 2016
+
+
+   consider it a relative URL from the current location.
+
+   This parameter MAY be used with successfully-authenticated responses.
+   If this parameter is contained in other kinds of responses, the
+   clients MUST ignore this parameter.
+
+   此参数可与成功验证的响应一起使用。 如果此参数包含在其他类型的响应中，则客户端必须忽略此参数。
+
+   When the user tells the client to terminate the current
+   authentication period, if the client currently displays a page
+   supplied by a response with this parameter, the client will
+   automatically change current location to the location specified in
+   this parameter, using a new GET request, as if it has received a 303
+   response.  Any operations related to logging-out (e.g. erasing
+   memories of user name, authentication credential and all related one-
+   time credentials such as nonce or keys) SHOULD occur before
+   processing a page transition.
+
+   当用户告知客户端终止当前认证周期时，
+   如果客户端当前显示由具有此参数的响应提供的页面，
+   则客户端将使用新的GET请求将当前位置自动更改为此参数中指定的位置，
+   如 如果它已经接收到303响应。 与退出相关的任何操作
+   （例如，擦除用户名，认证凭证的存储器和所有相关的一次性凭证，
+   例如随机数或密钥）应该在处理页面转换之前发生。   
+   
+   When the user requests the client for the termination of an
+   authentication period, if the client supports this parameter but the
+   server response does not contain this parameter, the client's
+   RECOMMENDED behavior is as follows: if the request corresponding to
+   the current content was GET method, reload the page without the
+   authentication credential.  Otherwise, keep the current content as-is
+   and simply forget the authentication status.  The client SHOULD NOT
+   replay a non-idempotent request without the user's explicit approval.
+
+   当用户请求客户端终止认证周期时，
+   如果客户端支持此参数但服务器响应不包含此参数，
+   则客户端的RECOMMENDED行为如下：如果与当前内容对应的请求是GET方法， 
+   重新加载没有身份验证凭据的页面。 否则，保持当前内容，
+   只是忘记身份验证状态。 客户端不应在未经用户明确批准的情况下不重播非幂等请求。
+   
+   Web applications are encouraged to send this parameter with an
+   appropriate value for any responses (except those with redirection
+   (3XX) statuses) for non-GET requests.
+   
+   鼓励Web应用程序为非GET请求的任何响应（带有重定向（3XX）状态的响应）发送带有适当值的此参数。
+
+   See Section 5 for some examples for possible deployment of this
+   parameter.
+   
+   有关可能部署此参数的一些示例，请参见第5节。
+
+4.6.  Logout-timeout parameter
+
+   Example:
+   Authentication-Control: Basic realm="entrance", logout-timeout=300
+
+   The parameter "logout-timeout", when contained in a successfully-
+   authenticated response, means that any authentication credentials and
+   state related to the current protection space are to be discarded if
+   a time specified in this header (in seconds) has passed since the
+   time this header was received.  The value MUST be an integer.  As a
+   special case, the value 0 means that the server is logging the client
+   out immediately from the current authentication space and that the
+   client is now returns to unauthenticated state.  This does not,
+   however, mean that the long-term memories for the passwords and
+   passwords-related details (such as password reminders and auto fill-
+   ins) should be removed.  If a new timeout value is received for the
+
+   参数“logout-timeout”当包含在成功认证的响应中时，
+   意味着如果从该报头指定的时间（以秒为单位）已经过去，
+   则与当前保护空间相关的任何认证凭证和状态将被丢弃 这个头被接收。 
+   该值必须是一个整数。 作为特殊情况，值0表示服务器立即从当前认证空间记录客户端，并且客户端现在返回到未认证状态。 但是，这并不意味着应删除与密码和密码相关的详细信息（例如密码提醒和自动填写）的长期记忆。 如果收到新的超时值
+
+
+Oiwa, et al.             Expires March 21, 2017                [Page 16]
+
+Internet-Draft   HTTP Auth. Ext. for Interactive Clients  September 2016
+
+
+   same authentication space, it cancels the previous timeout and sets a
+   new timeout.
+
+4.7.  Username parameter
+
+   Example:
+   Authentication-Control: Basic realm="configuration", username="admin"
+
+   The parameter "username" tells that the only "user name" to be
+   accepted by the server is the value given in this parameter.
+   
+   参数“username”告诉我们只有“用户名”，服务器接受的是此参数中给定的值。
+
+   This parameter is particularly useful, for example, for routers and
+   other network appliances with a Web configuration interface.  Many of
+   those use a HTTP Basic authentication with one predefined user name,
+   with many varieties such as "admin", "root", "user" etc.  In current
+   situation, users have almost no hint about the valid user name upon
+   the authentication request.  Some shows the valid value in a "realm"
+   string, some in the 401-status response page, shown _after_ the user
+   giving up the authentication and cancelled the authentication dialog.
+   If this parameter is given, the client Web browser can auto-fill the
+   user-name field in the authentication dialog before the users attempt
+   to authenticate themselves.
+   
+   此参数特别有用，例如，对于具有Web配置接口的路由器和其他网络设备。其中许多使用具有一个预定义用户名的HTTP基本认证，其具有诸如“admin”，“root”，“user”等许多变体。在当前情况下，用户在认证请求时几乎没有关于有效用户名的提示。有些在“realm”字符串中显示有效值，有些在401状态响应页面中显示，显示_after_用户放弃身份验证并取消身份验证对话框。如果给出此参数，客户端Web浏览器可以在用户尝试验证自身之前自动填充认证对话框中的用户名字段。
+
+   This parameter MAY be used with authentication-initiating responses
+   or negatively-authenticated responses requiring another attempt of
+   authentication.  The clients MUST ignore this parameter when a
+   response is either successfully-authenticated or intermediately-
+   authenticated.
+   
+   此参数可与认证启动响应或负认证响应一起使用，需要另一次认证尝试。当响应成功认证或中间认证时，客户端必须忽略此参数。
+
+   If the authentication scheme to be used has a syntax limitation on
+   the allowed user names (e.g.  Basic and Digest do not allow colons in
+   user names), the specified value MUST follow that limitation.
+   Clients SHOULD ignore any values which do not conform to such
+   limitations.
+   
+   如如果要使用的认证方案对允许的用户名具有语法限制（例如，基本和摘要不允许用户名中的冒号），则指定的值必须遵循该限制。客户端应该忽略任何不符合这种限制的值。
+
+   Also, if the used authentication scheme requires a specific style of
+   text preparation for the user name (e.g., PRECIS [RFC7564] string
+   preparation or Unicode normalization), the server SHOULD send the
+   values satisfying such requirements (so that clients can use the
+   given user name as is).
+   
+   此外，如果所使用的认证方案需要用于用户名的特定风格的文本准备（例如，PRECIS [RFC7564]字符串准备或Unicode标准化），则服务器应发送满足这样的要求的值（以使得客户端可以使用给定用户名称为）。
+
+   Clients MAY still send any authentication requests with other user
+   names, possibly in vain.  Clients are not required (also not
+   forbidden) to give users opportunities for supplying a user name
+   different from the server-specified one.  Servers are also not
+   strictly required to reject user names other than specified, but
+   doing so will usually give bad user experiences and may confuse users
+   and clients.
+   
+   客户端可能仍然发送任何身份验证请求与其他用户名，可能是徒劳的。不要求客户端（也不被禁止）给用户提供不同于服务器指定的用户名的机会。服务器也不是
+ 严格要求拒绝指定以外的用户名，但这样做通常会给用户带来不良体验，并可能会混淆用户和客户端。
+
+
+
+Oiwa, et al.             Expires March 21, 2017                [Page 17]
+
+Internet-Draft   HTTP Auth. Ext. for Interactive Clients  September 2016
+
+
+   Although this parameter is useful in a specific class of use cases,
+   using it in a general use cases has many security implications and
+   possible pit-falls.  Please consult Section 8.1 before deciding to
+   use this parameter.
+   
+   虽然此参数在特定类的用例中有用，但在一般用例中使用它有许多安全隐患和可能的缺陷。 在决定使用此参数之前，请参阅第8.1节。
+
+
+5.  Usage examples
+
+   This section shows some examples for applying this extension to
+   typical websites which are using Forms and cookies for managing
+   authentication and authorization.  The content of this section is not
+   normative and for illustrative purposes only.
+   
+   本部分显示了将此扩展应用于使用Forms和Cookie来管理身份验证和授权的典型网站的一些示例。 本节内容不是规范性的，仅用于说明目的。
+
+   In these examples, we assume that there are two kinds of clients (Web
+   browsers).  One kind of these implements all features described in
+   the previous sections.  We also assume that browsers will have a user
+   interface which allows users to deactivate (log-out from) current
+   authentication sessions.  The other kind are the "existing"
+   implementations which do not support any of these features.
+   
+   在这些例子中，我们假设有两种客户端（Web浏览器）。 其中一种实现了前面章节中描述的所有功能。 我们还假设浏览器将具有允许用户停用（注销）当前认证会话的用户界面。 另一种类型是不支持任何这些特征的“现有”实现。
+
+   When not explicitly specified, all settings described below are to be
+   applied with Authentication-Control headers, and these can be sent to
+   clients regardless of the authentication status (these will be
+   silently ignored whenever not effective).
+   
+   未明确指定时，下面描述的所有设置都将应用于Authentication-Control头，并且这些头可以发送到客户端，而不管认证状态如何（这些将在无效时被忽略）。
+
+5.1.  Example 1: a portal site
+
+   This subsection provides an example application for a site whose
+   structure is somewhat similar to conventional portal sites.  In
+   particular, most web pages are available for guest (unauthenticated)
+   users, and if authentication is performed, the content of these pages
+   is customized for each user.  We assume the site has the following
+   kinds of pages currently:
+   
+   本小节为结构与常规门户网站类似的网站提供了一个示例应用程序。 具体地，大多数网页可用于访客（未认证的）用户，并且如果执行认证，则为每个用户定制这些页面的内容。 我们假设网站目前有以下类型的网页：
+   
+   o  Content pages.
+   内容页
+
+   o  Pages/mechanism for performing authentication:
+   执行认证的页/机制：
+
+      *  There is one page which asks a user name and a password using a
+         HTML POST form.
+         有一个页面使用HTML POST表单询问用户名和密码。
+
+      *  After the authentication attempt, the user will be redirected
+         to either the page which is previously displayed before the
+         authentication, or some specific page.
+         身份验证尝试后，用户将被重定向到之前在身份验证之前显示的页面或某个特定页面。
+
+   o  A de-authentication (log-out) page.
+   解除认证（注销）页面。
+
+
+
+
+
+Oiwa, et al.             Expires March 21, 2017                [Page 18]
+
+Internet-Draft   HTTP Auth. Ext. for Interactive Clients  September 2016
+
+
+5.1.1.  Case 1: a simple application
+
+   When such a site does not require specific actions upon log-in and
+   log-out, the following simple settings can be used.
+
+   当此类站点在登录和注销时不需要特定操作时，可以使用以下简单设置。
+
+   o  Set up an optional authentication to all pages available to
+      guests.  Set up an Authentication-Control header with "auth-
+      style=non-modal" setting.
+
+      为访客可用的所有页面设置可选验证。 使用“auth- style = non-modal”设置设置一个Authentication-Control头。
+
+   o  If there are pages only available to authenticated users, set up a
+      mandatory authentication with "auth-style=non-modal" setting.
+
+      如果只有经过身份验证的用户可以访问的页面，请使用“auth-style = non-modal”设置强制验证。
+
+   o  No specific pages for authentication are needed.  It will be
+      performed automatically, directed by the above setting.
+
+      不需要用于认证的特定页面。 它将由上述设置自动执行。
+
+   o  A de-authentication page is also not needed.  If the site has one,
+      put "logout-timeout=0" there.
+
+      也不需要解除认证页面。 如果网站有一个，把“logout-timeout = 0”。
+
+   o  For all pages for POST requests, it is advisable to have
+      "location-when-logout=<some page>".
+
+	  对于POST请求的所有页面，建议使用“location-when-logout = <some page>”。
+
+5.1.2.  Case 2: specific action required on log-out
+
+   If the site requires specific actions upon log-out, the following
+   settings can be used.
+
+   如果站点在注销时需要特定操作，则可以使用以下设置。
+
+   o  All settings in the Case 1 are applied.
+
+   	  应用案例1中的所有设置。
+
+   o  For all pages, set up the Authentication-Control header "location-
+      when-logout=<de-authentication page>".
+
+      对于所有页面，设置Authentication-Control报头“location-when-logout = <de-authentication page>”。
+
+   o  In the de-authentication page, no specific set-up is needed.  If
+      there are any direct links to the de-authentication page, put
+      "logout-timeout=0".
+
+      在解除认证页面中，不需要特定的设置。 如果有任何直接链接到去认证页面，请将“logout-timeout = 0”。
+
+5.1.3.  Case 3: specific page displayed before log-in
+
+   If the site needs to display a specific page before log-in actions
+   (some announcements, user notices, or even advertisements), the
+   following settings can be applied.
+
+   如果网站需要在登录操作（一些公告，用户通知，甚至广告）之前显示特定页面，则可以应用以下设置。
+
+   o  Set up an optional authentication to all pages available to
+      guests.  Set up an Authentication-Control header with "no-
+      auth=true".  Put a link to a specific log-in page in contents.
+
+      为访客可用的所有页面设置可选验证。 使用“no-auth = true”设置一个Authentication-Control头。 在内容中放置指向特定登录页面的链接。
+
+   o  If there are pages only available to authenticated users, set up a
+      mandatory authentication with "location-when-unauthenticated=<the
+      log-in page>".
+
+      如果只有经过身份验证的用户可用的页面，请使用“location-when-unauthenticated = <登录页面>”设置强制验证。
+
+   o  For the specific log-in page, set up a mandatory authentication.
+
+      对于特定的登录页面，设置强制验证。
+
+   o  For all pages for POST requests, it is advisable to have
+      "location-when-logout=<some page>", too.
+
+      对于POST请求的所有页面，建议有“location-when-logout = <some page>”。
+
+   o  De-authentication pages are not needed.  If the site has one, put
+      "logout-timeout=0".
+
+      不需要取消认证页面。 如果站点有一个，请将“logout-timeout = 0”。
+
+  
+
+
+5.2.  Example 2: authenticated user-only sites
+
+   If almost all pages in the target site require authentication (e.g.,
+   an Internet banking site), or if there are no needs to support both
+   unauthenticated and authenticated users on the same resource, the
+   settings will become simpler.  The following are an example for such
+   a site:
+
+   如果目标站点中的几乎所有页面都需要认证（例如，因特网银行站点），或者如果不需要在相同资源上支持未认证和认证的用户，则设置将变得更简单。 以下是此类网站的示例：
+
+   o  Set up a mandatory authentication to all pages available to
+      authenticated users.  Set up an Authentication-Control header with
+      "auth-style=non-modal" setting.
+
+      对经过身份验证的用户可用的所有页面设置强制验证。 使用“auth-style = non-modal”设置设置一个Authentication-Control头。
+
+   o  Set up a handler for the 401-status which requests users to
+      authenticate.
+
+      设置401状态的处理程序，请求用户进行身份验证。
+
+   o  For all pages for POST requests, it is advisable to have
+      "location-when-logout=<some page>", too.
+
+      对于POST请求的所有页面，建议有“location-when-logout = <some page>”。
+
+   o  De-authentication pages are not needed.  If the site will have
+      one, put "logout-timeout=0" there.
+
+      不需要取消认证页面。 如果网站有一个，把“logout-timeout = 0”。
+
+5.3.  When to use Cookies
+
+   In current Web sites using form-based authentication, Cookies
+   [RFC6265] are used for managing both authorization and application
+   sessions.  Using the extensions in this document, the former features
+   will be provided by using (extended) HTTP authentication/
+   authorization mechanisms.  In some cases, there will be ambiguity on
+   whether some functions are for authorization management or for
+   session management.  The following hints will be helpful for deciding
+   which features to use.
+
+   在当前使用基于表单的认证的网站中，Cookies [RFC6265]用于管理授权和应用程序会话。使用本文档中的扩展，将使用（扩展）HTTP身份验证/授权机制提供前一个功能。在某些情况下，对于某些功能是否用于授权管理或会话管理将存在歧义。以下提示将有助于决定使用哪些功能。
+
+   o  If there is a need to serve multiple sessions for a single user
+      using multiple browsers concurrently, use a Cookie for
+      distinguishing between sessions for the same user.  (C.f. if there
+      is a need to distinguish sessions in the same browser, HTML5 Web
+      Storage [W3C.REC-webstorage-20130730] features can be used instead
+      of Cookies.)
+
+      如果需要为单个用户同时使用多个浏览器提供多个会话，请使用Cookie区分同一用户的会话。 （C.f.如果需要在同一浏览器中区分会话，则可以使用HTML5 Web Storage [W3C.REC-webstorage-20130730]功能代替Cookie。）
+
+   o  If a web site is currently deploying a session time-out feature,
+      consider who benefits from the feature.  In most cases, the main
+      requirement for such a feature is to protect users from having
+      their consoles and browsers hijacked (i.e. benefits are on the
+      users' side).  In such cases, the time-out features provided in
+      this extension can be used.  On the other hand, the requirement is
+      to protect server's privilege (e.g. when some regulations require
+      to limit the time difference between user's two-factor
+      authentication and financial transaction commitment; the
+      requirement is strictly on the servers' side), that should be
+      managed on the server side using Cookies or other session
+      management mechanisms.
+
+      如果网站当前正在部署会话超时功能，请考虑从功能中受益的人员。在大多数情况下，这种功能的主要要求是保护用户免受他们的控制台和浏览器被劫持（即利益在用户方）。在这种情况下，可以使用此扩展中提供的超时功能。另一方面，要求是保护服务器的特权（例如，当一些规定要求限制用户的双因素认证和金融交易承诺之间的时间差;该要求严格在服务器侧），应该管理服务器端使用Cookie或其他会话管理机制。
+
+5.4.  Parallel deployment with Form/Cookie authentication
+
+   In some transition periods, sites can need to support both HTTP-layer
+   and form-based authentication.  The following example shows one way
+   to achieve that.
+
+   在某些过渡期，网站可能需要支持HTTP层和基于表单的身份验证。以下示例显示了一种实现方法。
+
+   o  If Cookies are used even for HTTP-authenticated users, each
+      session determined by Cookies SHOULD identify which authentication
+      has been used for the session.
+
+      如果Cookie甚至用于HTTP认证的用户，Cookie确定的每个会话应该标识哪个认证已用于会话。
+
+   o  First, set up any of the above settings for enabling HTTP-layer
+      authentication.
+
+      首先，设置以上任何设置以启用HTTP层认证。
+
+   o  For unauthenticated users, add the following things to the Web
+      pages, unless the client supports this extension and HTTP-level
+      authentication.
+
+      对于未经身份验证的用户，请将以下内容添加到网页中，除非客户端支持此扩展和HTTP级别身份验证。
+
+      *  For non-mandatory authenticated pages, put a link to Form-based
+         authenticated pages.
+
+         对于非强制验证页面，请将链接放置到基于表单的验证页面。
+
+      *  For mandatory authenticated pages, either put a link to Form-
+         based authenticated pages, or put a HTML-level redirection
+         (using <META http-equiv="refresh" ...> element) to such pages.
+
+         对于强制验证页面，请将链接放置到基于表单的验证页面，或对这些页面进行HTML级重定向（使用<META http-equiv =“refresh”...>元素）。
+
+   o  In Form-based authenticated pages, if users are not authenticated,
+      the page can provide a redirection for HTTP-level authentication
+      by "location-when-unauthenticated" setting.
+
+      在基于表单的身份验证页面中，如果用户未通过身份验证，则该页面可以通过“未验证位置”设置提供HTTP级别身份验证的重定向。
+
+   o  Users are identified to authorization and content customization by
+      the following logic.
+
+      通过以下逻辑将用户标识为授权和内容定制。
+
+      *  First, check the result of the HTTP-level authentication.  If
+         there is a Cookie session tied to a specific user, both should
+         match.
+
+         首先，检查HTTP级别身份验证的结果。如果有一个Cookie会话绑定到特定的用户，两者应该匹配。 
+
+      *  If the user is not authenticated on the HTTP-level, use the
+         conventional Form-based method to determine the user.
+
+         如果用户未在HTTP级别上进行身份验证，请使用传统的基于Form的方法来确定用户。
+
+      *  If there is a Cookie tied to HTTP authentication, but there is
+         no corresponding HTTP authentication result, that session will
+         be discarded (because it means that authentication is
+         deactivated by the corresponding user).
+
+         如果有Cookie绑定到HTTP身份验证，但没有相应的HTTP身份验证结果，则该会话将被丢弃（因为这意味着相应用户禁用身份验证）。
+
+6.  Methods to extend this protocol
+
+   If a private extension to this protocol is implemented, it MUST use
+   the extension-param to avoid conflicts with this protocol and any
+   other extensions.  (Standardized or being-standardized extensions MAY
+   use either bare-tokens or extension-tokens.)
+
+   如果实现此协议的私有扩展，它必须使用扩展参数以避免与此协议和任何其他扩展的冲突。 （标准化或非标准化扩展可以使用裸令牌或扩展令牌。）
+
+   When bare-tokens are used in this protocol, these MUST be allocated
+   by IANA.  Any tokens used for non-private, non-experimental
+   parameters are RECOMMENDED to be registered to IANA, regardless of
+   the kind of tokens used.
+
+   当在此协议中使用裸令牌时，这些必须由IANA分配。 用于非私人，非实验参数的任何令牌都建议在IANA注册，无论使用的令牌类型如何。
+   
+   Extension-tokens MAY be freely used for any non-standard, private,
+   and/or experimental uses.  An extension-tokens MUST use the format
+   "-<bare-token>.<domain-name>", where <domain-name> is a validly
+   registered (sub-)domain name on the Internet owned by the party who
+   defines the extensions.  Any unknown parameter name is to be ignored
+   regardless of whether it is an extension-token or a bare-token.
+
+   扩展令牌可以自由地用于任何非标准，私人和/或实验用途。 扩展令牌必须使用格式“ - <bare-token>。<domain-name>”，其中<domain-name>是由定义扩展名的一方拥有的互联网上的有效注册（子） 。 任何未知的参数名称都将被忽略，不管它是扩展令牌还是裸令牌。
+
+7.  IANA Considerations
+
+   This document defines two new entries for the "Permanent Message
+   Header Field Names" registry.
+
+   本文档为“永久消息头字段名称”注册表定义了两个新条目。
+
+   +-------------+---------------------------+-------------------------+
+   |             | Entry 1:                  | Entry 2:                |
+   +-------------+---------------------------+-------------------------+
+   | Header      | Optional-WWW-Authenticate | Authentication-Control  |
+   | Field Name  |                           |                         |
+   | Protocol    | http                      | http                    |
+   | Status      | experimental              | experimental            |
+   | Change      | IETF                      | IETF                    |
+   | Control     |                           |                         |
+   | Spec.       | Section 3 of this         | Section 4 of this       |
+   | Document    | document                  | document                |
+   +-------------+---------------------------+-------------------------+
+
+   This document also establishes a registry for HTTP authentication
+   control parameters.  The registry manages case-insensitive ASCII
+   strings.  The string MUST follow the extensive-token syntax defined
+   in Section 2.2.
+
+   本文档还为HTTP身份验证控制参数建立了一个注册表。 注册表管理区分大小写的ASCII字符串。 字符串必须遵循2.2节中定义的扩展令牌语法。
+ 
+   To acquire registered tokens, a specification for the use of such
+   tokens MUST be available as a publicly-accessible document, as
+   outlined as "Specification Required" level in [RFC5226].
+
+   要获取注册令牌，必须使用这种令牌的规范作为可公开访问的文档，如[RFC5226]中的“需要规范”级别所述。
+  
+   Registrations for authentication control parameters are required to
+   include a description of the control extension.  New registrations
+   are advised to provide the following information:
+
+   需要注册认证控制参数以包括控制扩展的描述。 建议新注册提供以下信息：
+
+   o  Token: a token used in HTTP headers for identifying the algorithm.
+
+   令牌：在HTTP头中用于标识算法的令牌。
+   
+   o  Specification: A reference for a specification defining the
+      algorithm.
+
+   规范：定义算法的规范的参考。   
+
+   The initial content of this registry is as follows:
+
+   此注册表的初始内容如下：
+
+     +-------------------------------+------------------------------+
+     | Token                         | Specification                |
+     +-------------------------------+------------------------------+
+     | auth-style                    | Section 4.2 of this document |
+     | location-when-unauthenticated | Section 4.3 of this document |
+     | no-auth                       | Section 4.4 of this document |
+     | location-when-logout          | Section 4.5 of this document |
+     | logout-timeout                | Section 4.6 of this document |
+     | username                      | Section 4.7 of this document |
+     +-------------------------------+------------------------------+
+
+
+8.  Security Considerations
+
+   The purpose of the log-out timeout feature in the Authentication-
+   control header is to protect users of clients from impersonation
+   caused by an attacker having access to the same console.  The server
+   application implementers SHOULD be aware that the directive may
+   always be ignored by either malicious clients or clients not
+   supporting this extension.  If the purpose of introducing a timeout
+   for an authentication period is to protect server-side resources,
+   this protection MUST be implemented by other means such as HTTP
+   Cookies [RFC6265].
+
+   认证控制头中的注销超时功能的目的是保护客户端的用户免受由可访问同一控制台的攻击者造成的模拟。服务器应用程序实现者应该意识到该指令可能总是被恶意客户端或不支持该扩展的客户端忽略。如果为认证周期引入超时的目的是保护服务器端资源，则此保护必须通过其他方式实现，例如HTTP Cookie [RFC6265]。
+
+   All parameters in the Authentication-Control header SHOULD NOT be
+   used for any security-enforcement purposes.  Server-side applications
+   MUST NOT assume that the header will be honored by clients and users.
+
+   认证控制头中的所有参数不应该用于任何安全执行目的。服务器端应用程序不能假定头将被客户端和用户所接受。
+
+
+8.1.  Security implication of the username parameter
+
+   The "username" parameter sometimes reveals sensitive information
+   about the HTTP server and its configurations, useful for security
+   attacks.  In general, security common practice suggests that any kind
+   of information on the existence/non-existence of specific user-name
+   shall not be disclosed before the successful authentication.
+   Obviously, the "username" parameter contradicts with this practice.
+
+    “username”参数有时会显示有关HTTP服务器及其配置的敏感信息，对安全攻击很有用。一般来说，安全常见实践表明，在成功认证之前，不应公开任何关于特定用户名的存在/不存在的信息。显然，“username”参数与这种做法相矛盾。
+
+   Given this background, the use of the "username" parameter SHOULD be
+   strictly limited to cases where the all of the following conditions
+   are met:
+
+   在这种背景下，“username”参数的使用应严格限于满足以下所有条件的情况：
+
+   (1)  the valid user name is pre-configured and not modifiable (such
+        as root, admin or similar ones);
+
+        有效的用户名是预配置的，不可修改的（如root，admin或类似的）;
+
+   (2)  the valid user name for such an appliance is publicly known (for
+        example, written in a manual document); and
+
+        此类设备的有效用户名是公开的（例如，写在手册文档中）;和
+
+   (3)  either the valid user name for the server is easily guessable by
+        other means (for example, from the model number shown in an
+        unauthenticated page), or the server is accessible only from
+        limited networks.
+
+        通过其他方式（例如，从未认证的页面中显示的型号）可以容易地猜测服务器的有效用户名，或者服务器只能从有限网络访问。
+
+   Most importantly, the "username" parameter SHOULD NOT be used in any
+   case when the valid user names can be changed/configured by users or
+   administrators.
+
+   最重要的是，当用户或管理员可以更改/配置有效的用户名时，“username”参数不应该被使用。
+
+
+
+9.  References
+
+9.1.  Normative References
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119, DOI 10.17487/
+              RFC2119, March 1997,
+              <http://www.rfc-editor.org/info/rfc2119>.
+
+   [RFC5226]  Narten, T. and H. Alvestrand, "Guidelines for Writing an
+              IANA Considerations Section in RFCs", BCP 26, RFC 5226,
+              DOI 10.17487/RFC5226, May 2008,
+              <http://www.rfc-editor.org/info/rfc5226>.
+
+   [RFC5234]  Crocker, D., Ed. and P. Overell, "Augmented BNF for Syntax
+              Specifications: ABNF", STD 68, RFC 5234, DOI 10.17487/
+              RFC5234, January 2008,
+              <http://www.rfc-editor.org/info/rfc5234>.
+
+   [RFC5987]  Reschke, J., "Character Set and Language Encoding for
+              Hypertext Transfer Protocol (HTTP) Header Field
+              Parameters", RFC 5987, DOI 10.17487/RFC5987, August 2010,
+              <http://www.rfc-editor.org/info/rfc5987>.
+
+   [RFC7230]  Fielding, R., Ed. and J. Reschke, Ed., "Hypertext Transfer
+              Protocol (HTTP/1.1): Message Syntax and Routing",
+              RFC 7230, DOI 10.17487/RFC7230, June 2014,
+              <http://www.rfc-editor.org/info/rfc7230>.
+
+   [RFC7235]  Fielding, R., Ed. and J. Reschke, Ed., "Hypertext Transfer
+              Protocol (HTTP/1.1): Authentication", RFC 7235,
+              DOI 10.17487/RFC7235, June 2014,
+              <http://www.rfc-editor.org/info/rfc7235>.
+
+9.2.  Informative References
+
+   [RFC6265]  Barth, A., "HTTP State Management Mechanism", RFC 6265,
+              DOI 10.17487/RFC6265, April 2011,
+              <http://www.rfc-editor.org/info/rfc6265>.
+
+   [RFC7564]  Saint-Andre, P. and M. Blanchet, "PRECIS Framework:
+              Preparation, Enforcement, and Comparison of
+              Internationalized Strings in Application Protocols",
+              RFC 7564, DOI 10.17487/RFC7564, May 2015,
+              <http://www.rfc-editor.org/info/rfc7564>.
+
+   [RFC7615]  Reschke, J., "HTTP Authentication-Info and Proxy-
+              Authentication-Info Response Header Fields", RFC 7615,
+              DOI 10.17487/RFC7615, September 2015,
+              <http://www.rfc-editor.org/info/rfc7615>.
+
+   [W3C.REC-webstorage-20130730]
+              Hickson, I., "Web Storage", World Wide Web Consortium
+              Recommendation REC-webstorage-20130730, July 2013,
+              <http://www.w3.org/TR/2013/REC-webstorage-20130730>.
+
+
+Appendix A.  (Informative) Applicability of features for each messages
+
+附录A.（信息性）每个消息的特征的适用性
+
+   This section provides a cross-reference table showing the
+   applicability of the features provided in this specification to each
+   kind of responses described in Section 2.1.  The table provided in
+   this section is for informative purposes only.
+
+   本节提供了一个交叉引用表，显示了本规范中提供的特性对第2.1节中描述的每种响应的适用性。 本节中提供的表仅供参考。
+
+        +-------------------+-------+----------+-----------+------+
+        |                   | init. | success. | intermed. | neg. |
+        +-------------------+-------+----------+-----------+------+
+        | Optional auth.    | O     | n        | N         | N    |
+        | auth-style        | O     | -        | -         | O    |
+        | loc.-when-unauth. | O     | I        | I         | i    |
+        | no-auth           | O     | I        | I         | i    |
+        | loc.-when-logout  | -     | O        | -         | -    |
+        | logout-timeout    | -     | O        | -         | -    |
+        | username          | O     | -        | -         | O    |
+        +-------------------+-------+----------+-----------+------+
+
+   Legends:
+   O = MAY contain; n = SHOULD NOT contain; N = MUST NOT contain
+   i = SHOULD be ignored; I = MUST be ignored;
+   - = meaningless (to be ignored)
+
+   O = 可以包含; n =不应包含; N =不能包含i =应该忽略; I =必须被忽略; - =无意义（被忽略）
+
+
+Appendix B.  (Informative) Draft Change Log
+
+   [To be removed on final publication]
+
+B.1.  Changes in Httpauth WG Revision 09
+
+   o  More comments are reflected to the text.
+
+B.2.  Changes in Httpauth WG Revision 08
+
+   o  Typo fixed.
+
+   o  Authors' addresses updated.
+
+B.3.  Changes in Httpauth WG Revision 07
+
+   o  WGLC comments are reflected to the text.
+
+B.4.  Changes in Httpauth WG Revision 06
+
+   o  Several comments from reviewers are reflected to the text.
+
+B.5.  Changes in Httpauth WG Revision 05
+
+   o  Authors' addresses updated.
+
+B.6.  Changes in Httpauth WG revision 04
+
+   o  IANA consideration section added.
+
+B.7.  Changes in Httpauth WG revision 03
+
+   o  Adopting RFC 5987 extended syntax for non-ASCII parameter values.
+
+B.8.  Changes in Httpauth WG revision 02
+
+   o  Added realm parameter.
+
+   o  Added username parameter.  We acknowledge Michael Sweet's proposal
+      for including this to the Basic authentication.
+
+B.9.  Changes in Httpauth WG revision 01
+
+   o  Clarification on peers' responsibility about handling of relative
+      URLs.
+
+   o  Automatic reloading should be allowed only on safe methods, not
+      always on idempotent methods.
+
+B.10.  Changes in Httpauth revision 00 and HttpBis revision 00
+
+   None.
+
+B.11.  Changes in revision 02
+
+   o  Added usage examples.
+
+B.12.  Changes in revision 01
+
+   o  Syntax notations and parsing semantics changed to match httpbis
+      style.
+
+B.13.  Changes in revision 00
+
+   o  Separated from HTTP Mutual authentication proposal (-09).
+
+   o  Adopting httpbis works as a referencing point to HTTP.
+
+   o  Generalized, now applicable for all HTTP authentication schemes.
+
+   o  Added "no-auth" and "auth-style" parameters.
+
+   o  Loosened standardization requirements for parameter-name tokens
+      registration.
+
+
+Authors' Addresses
+
+   Yutaka Oiwa
+   National Institute of Advanced Industrial Science and Technology
+   Information Technology Research Institute
+   Tsukuba Central 1
+   1-1-1 Umezono
+   Tsukuba-shi, Ibaraki
+   JP
+
+   Email: y.oiwa@aist.go.jp
+
+
+   Hajime Watanabe
+   National Institute of Advanced Industrial Science and Technology
+   Information Technology Research Institute
+   Tsukuba Central 1
+   1-1-1 Umezono
+   Tsukuba-shi, Ibaraki
+   JP
+
+   Email: h-watanabe@aist.go.jp
+
+
+   Hiromitsu Takagi
+   National Institute of Advanced Industrial Science and Technology
+   Information Technology Research Institute
+   Tsukuba Central 1
+   1-1-1 Umezono
+   Tsukuba-shi, Ibaraki
+   JP
+
+   Email: takagi.hiromitsu@aist.go.jp
+
+
+   Kaoru Maeda
+   Lepidum Co. Ltd.
+   Village Sasazuka 3, Suite #602
+   1-30-3 Sasazuka
+   Shibuya-ku, Tokyo
+   JP
+
+   Email: maeda@lepidum.co.jp
+
+   Tatsuya Hayashi
+   Lepidum Co. Ltd.
+   Village Sasazuka 3, Suite #602
+   1-30-3 Sasazuka
+   Shibuya-ku, Tokyo
+   JP
+
+   Email: hayashi@lepidum.co.jp
+
+
+   Yuichi Ioku
+   Individual
+
+   Email: mutual-work@ioku.org

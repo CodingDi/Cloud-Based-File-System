@@ -1,0 +1,257 @@
+package com.free4lab.filesystem.operate.imp;
+
+import com.free4lab.filesystem.common.Constants;
+import com.free4lab.filesystem.common.Signal;
+import com.free4lab.filesystem.operate.FileBasicOperate;
+import com.free4lab.filesystem.response.BasicResponse;
+import com.free4lab.filesystem.response.DownFileResponse;
+import com.free4lab.filesystem.search.SearchQueue;
+import com.free4lab.filesystem.search.SearchUtil;
+import com.free4lab.filesystem.sql.beans.FileDetailEntity;
+import com.free4lab.filesystem.sql.service.FileDetailEntityService;
+import com.free4lab.filesystem.util.CommandFactory;
+import com.free4lab.filesystem.util.NfsLocationUtil;
+import com.free4lab.filesystem.util.TikaUtil;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.activation.MimetypesFileTypeMap;
+import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Created by lizhenhao on 2017/6/12.
+ */
+@Component
+public class FileBasicOperateImp implements FileBasicOperate {
+
+    protected static Logger logger = Logger.getLogger(FileBasicOperateImp.class);
+
+    public FileDetailEntityService fileDetailEntityService = FileDetailEntityService.getInstance();
+
+
+    public BasicResponse deleteFile(String id,String type) {
+        //查询数据库获取存储路径
+        FileDetailEntity fileDetail = fileDetailEntityService.findSingleFile(id);
+        String[] commandsText = null;
+        String[] commandsPic = null;
+        if(type.equals(Constants.TEXT)) {
+            commandsText = CommandFactory.delCommand(fileDetail.getTextFilePath(),fileDetail.getTextFileName());
+        }
+        else if(type.equals(Constants.PIC)) {
+            commandsPic = CommandFactory.delCommand(fileDetail.getPicFilePath(),fileDetail.getPicFileName());
+        }
+        else if(type.equals(Constants.ALL)){
+            commandsText = CommandFactory.delCommand(fileDetail.getPicFilePath(),fileDetail.getPicFileName());
+            commandsPic = CommandFactory.delCommand(fileDetail.getTextFilePath(),fileDetail.getTextFileName());
+        }
+        Runtime runtime = Runtime.getRuntime();
+        try {
+            if (commandsText!=null) runtime.exec(commandsText);
+            if (commandsPic!=null) runtime.exec(commandsPic);
+        } catch (IOException e) {
+            logger.error("删除文件出错；"+e.getMessage());
+            return new BasicResponse(Signal.DEL_FILE_ERROR,Signal.ERROR);
+        }
+        if(type.equals(Constants.TEXT)) {
+            fileDetail.setTextFilePath(null);
+            fileDetail.setTextFileName(null);
+            SearchUtil.deleteDoc(fileDetail.getUri());
+        }
+        else if(type.equals(Constants.PIC)){
+            fileDetail.setPicFilePath(null);
+            fileDetail.setPicFileName(null);
+        }
+        else if(type.equals(Constants.ALL)) {
+            fileDetail.setTextFilePath(null);
+            fileDetail.setTextFileName(null);
+            fileDetail.setPicFilePath(null);
+            fileDetail.setPicFileName(null);
+            SearchUtil.deleteDoc(fileDetail.getUri());
+        }
+
+        if(fileDetail.getPicFilePath() == null && fileDetail.getTextFilePath() == null) {
+            fileDetailEntityService.deleteFile(fileDetail);
+        }
+        else {
+            fileDetailEntityService.updateFile(fileDetail);
+        }
+        logger.info("删除文件成功");
+        return new BasicResponse(Signal.SUCCESS,Signal.OK);
+    }
+
+    public BasicResponse saveFile(Map<String,InputStream> fileMap, Map<String,String> fileNameMap, String eventId, String year, String departmentId, String enterpriseId, String type, String id) {
+
+        FileDetailEntity fileDetail;
+        fileDetail = fileDetailEntityService.findSingleFile(id);
+        if(fileDetail == null) fileDetail = new FileDetailEntity();
+
+        Map<String,String> pathName = new HashMap<>();
+        if(type.equals(Constants.TEXT)) {
+            String path = NfsLocationUtil.getNfsLocation(fileNameMap.get(Constants.TEXT));
+            fileDetail.setTextFilePath(path);
+            fileDetail.setTextFileName(fileNameMap.get(Constants.TEXT));
+            fileDetail.setFile(fileMap.get(Constants.TEXT));
+            String content = TikaUtil.parseFile(fileMap.get(Constants.TEXT),fileNameMap.get(Constants.TEXT));
+            logger.info(content);
+            fileDetail.setContent(content);
+            pathName.put(Constants.TEXT,path);
+        }
+        else if(type.equals(Constants.PIC)){
+            String path = NfsLocationUtil.getNfsLocation(fileNameMap.get(Constants.PIC));
+            fileDetail.setPicFilePath(path);
+            fileDetail.setPicFileName(fileNameMap.get(Constants.PIC));
+            pathName.put(Constants.PIC,path);
+        }
+        else if(type.equals(Constants.ALL)){
+            String pathText = NfsLocationUtil.getNfsLocation(fileNameMap.get(Constants.TEXT));
+            fileDetail.setTextFilePath(pathText);
+            fileDetail.setTextFileName(fileNameMap.get(Constants.TEXT));
+            fileDetail.setFile(fileMap.get(Constants.TEXT));
+            String content = TikaUtil.parseFile(fileMap.get(Constants.TEXT),fileNameMap.get(Constants.TEXT));
+            logger.info(content);
+            fileDetail.setContent(content);
+
+            String pathPic = NfsLocationUtil.getNfsLocation(fileNameMap.get(Constants.PIC));
+            fileDetail.setPicFilePath(pathPic);
+            fileDetail.setPicFileName(fileNameMap.get(Constants.PIC));
+            pathName.put(Constants.PIC,pathPic);
+            pathName.put(Constants.TEXT,pathText);
+        }
+
+        fileDetail.setFileName(fileNameMap.get("fileName"));
+        fileDetail.setType(type);
+        fileDetail.setEventId(eventId);
+        fileDetail.setYear(year);
+        fileDetail.setDepartmentId(departmentId);
+        fileDetail.setEnterpriseId(enterpriseId);
+        try {
+            saveFileTodisk(fileMap,fileNameMap,pathName);
+        } catch (Exception e) {
+            logger.error("保存文件出错；"+e.getMessage());
+            return new BasicResponse(Signal.SAVE_FILE_ERROR,Signal.ERROR);
+        }
+        // TODO: 2017/6/12 存入之前查询数据库看是否有重名，并且进行重名的处理
+//        for(String key:fileMap.keySet()) {
+//            if(fileMap.get(key) != null) {
+//                FileInputStream in = null;
+//                FileOutputStream out = null;
+//                //存入随机文件夹
+//                try {
+//                    in = new FileInputStream(fileMap.get(key));
+//                    out = new FileOutputStream(pathName.get(key)+fileNameMap.get(key));
+//                    byte[] buffer = new byte[1024];
+//                    int len = 0;
+//
+//                    while((len = in.read(buffer))!= -1) {
+//                        out.write(buffer,0,len);
+//                    }
+//                    in.close();
+//                    out.close();
+//                } catch (Exception e) {
+//                    logger.error("保存文件出错；"+e.getMessage());
+//                    return new BasicResponse(Signal.SAVE_FILE_ERROR,Signal.ERROR);
+//                }
+//            }
+//        }
+        logger.info("保存文件成功");
+        SearchQueue.put(fileDetail);
+        return new BasicResponse(Signal.SUCCESS,Signal.OK);
+    }
+
+    private void saveFileTodisk(Map<String,InputStream> fileMap, Map<String,String> fileNameMap,Map<String,String> pathName)  throws Exception{
+        for(String key:fileMap.keySet()) {
+            if(fileMap.get(key) != null) {
+                InputStream in = null;
+                FileOutputStream out = null;
+                //存入随机文件夹
+                in = fileMap.get(key);
+                File   dirFile;
+                boolean bFile;
+                String path1= pathName.get(key);//文件路径
+                int lengthOfPath1=path1.length();
+                String path2=path1.substring(0,lengthOfPath1-3);
+                try
+                {
+                    dirFile = new File(path2);
+                    bFile   = dirFile.exists();
+                    if( bFile == true )
+                    {
+                        System.out.println("The folder exists.");
+                        dirFile = new File(path1);
+                        bFile = dirFile.exists();
+                        if( bFile == true )
+                        {
+                            System.out.println("The folder exists.");
+                        } else {
+                            System.out.println("The folder do not exist,now trying to create a one...");
+                            bFile = dirFile.mkdir();
+                            if(bFile == true){
+                                System.out.println("Create second folder successfully!");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        System.out.println("The folder do not exist,now trying to create a one...");
+                        bFile = dirFile.mkdir();
+                        if( bFile == true ) {
+                            System.out.println("Create first folder successfully!");
+                            dirFile = new File(path1);
+                            bFile = dirFile.exists();
+                            if( bFile == true )
+                            {
+                                System.out.println("The folder exists.");
+                            } else {
+                                System.out.println("The folder do not exist,now trying to create a one...");
+                                bFile = dirFile.mkdir();
+                                if(bFile == true){
+                                    System.out.println("Create second folder successfully!");
+                                }
+                            }
+                        }
+                        else {
+                            System.out.println("Disable to make the folder,please check the disk is full or not.");
+                            System.exit(1);
+                        }
+                    }
+                }catch(Exception e)
+                {
+                    e.printStackTrace();
+                }
+                out = new FileOutputStream(pathName.get(key)+fileNameMap.get(key));
+                byte[] buffer = new byte[1024];
+                int len = 0;
+                while((len = in.read(buffer))!= -1) {
+                    out.write(buffer,0,len);
+                }
+                in.close();
+                out.close();
+                logger.info("path:" + pathName.get(key)+fileNameMap.get(key) );
+            }
+        }
+    }
+
+    public DownFileResponse downFile(String path) {
+        File file = new File(path);
+        InputStream inputStream = null;
+        String contentType = null;
+        String contentDisposition = null;
+        long contentLength = 1;
+
+        try {
+            inputStream = new FileInputStream(file);
+            contentType = new MimetypesFileTypeMap().getContentType(file);
+            contentLength = inputStream.available();
+            logger.info("文件大小为："+contentLength);
+            contentDisposition = "attachment;filename="+file.getName();
+        } catch (Exception e) {
+            logger.error("要下载的文件不存在"+e.getMessage());
+            return new DownFileResponse(Signal.DOWN_FILE_ERROR,Signal.ERROR);
+        }
+
+        logger.info("文件存在");
+        return new DownFileResponse(inputStream,contentType,contentLength,contentDisposition,Signal.SUCCESS,Signal.OK);
+    }
+}

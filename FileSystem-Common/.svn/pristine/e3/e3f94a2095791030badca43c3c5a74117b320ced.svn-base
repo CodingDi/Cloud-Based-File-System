@@ -1,0 +1,107 @@
+package com.free4lab.filesystem.common;
+
+/**
+ * Created by lizhenhao on 2017/2/16.
+ */
+public class Signal {
+    /**
+     * 搜索类型
+     */
+    public static final String FIND = "1";
+
+    public static final String SEARCH = "2";
+
+
+
+    /**
+     * HTTP返回码
+     */
+    public static final String OK = "200";
+
+    public static final String ERROR = "500";
+
+    public final static String STATUS_EXISTED = "1053";
+
+    public final static String STATUS_INVALID_PARAMETER = "1054";
+
+    public final static String STATUS_UNKNOWN_ERROR = "1055";
+
+    public final static String STATUS_DATABASE_ERROR = "1056";
+
+    public final static String STATUS_DUPLICATEUSER_ERROR = "1057";
+
+
+    /**
+     * HTTP返回消息
+     */
+    public static final String SUCCESS = "success";
+
+    public static final String GET_DIR_ERROR = "获取目录结构失败";
+
+    public static final String CREAT_DIR_ERROR = "创建目录失败";
+
+    public static final String DEL_FILE_ERROR = "删除文件失败";
+
+    public static final String RENAME_FILE_ERROR = "重命名文件失败";
+
+    public static final String SEARCH_FILE_ERROR = "搜索文件失败";
+
+    public static final String FIND_FILE_ERROR = "查找文件失败";
+
+    public static final String SAVE_FILE_ERROR = "保存文件失败";
+
+    public static final String DOWN_FILE_ERROR = "下载文件失败";
+
+    public static final String SAVE_USER_ERROR = "新建用户失败";
+
+    public static final String FIND_USER_ERROR = "查询用户失败";
+
+    public static final String UPDATE_USER_ERROR = "修改用户失败";
+
+    public static final String MODIFY_PASSWORD_ERROR = "修改密码失败";
+
+    public static final String MODIFY_PASSWORD_OLD_ERROR = "原密码不正确";
+
+    public static final String DELETE_USER_ERROR = "删除用户失败";
+
+    public static final String UPDATE_DIR_ERROR = "编辑失败";
+
+    public static final String DELETE_DIR_ERROR = "删除部门失败";
+
+    public static final String SAVE_ENTERPRISE_ERROR = "新建企业失败";
+
+    public static final String FIND_ENTERPRISE_ERROR = "查询企业失败";
+
+    public static final String UPDATE_ENTERPRISE_ERROR = "修改企业失败";
+
+    public static final String DELETE_ENTERPRISE_ERROR = "删除企业失败";
+
+
+    public final static String DEFAULT_ERROR = "The request processing has failed due to some unknown error.";
+
+
+    /**
+     * 资源获取的参数名统一，资源请求路径统一
+     */
+    public static final String PATH_DIR_MESS = "dirMessage";
+
+    public static final String PATH_DIR_CREATE = "dirCreate";
+
+    public static final String PATH_FILE_RENAME = "fileRename";
+
+    public static final String PATH_FILE_DEL = "fileDel";
+
+    public static final String PATH_FILE_SEARCH = "fileSearch";
+
+    public static final String PATH_FILE_SAVE = "fileUpLoad";
+
+    public static final String PATH_FILE_DOWN = "fileDownLoad";
+
+    public static final String PARAMETER_FILE = "fileName";
+
+    public static final String PARAMETER_PATH = "path";
+
+    public static final String PARAMETER_NEW_FILE = "newName";
+
+
+}

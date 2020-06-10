@@ -1,0 +1,9 @@
+#ROOT_DIR = d:/home/fileSystem/
+ROOT_DIR = G:/labwork/lab/home/
+DIR_TYPE = d
+FILE_TYPE = -
+
+FILE_PATH = files
+
+SOUYA_APPKEY = 87476c8969354c9ca7eff0dcecf3bb24
+SOUYA_SECRETKEY = 1V2PBYxYLGFa5XRbnHP2lUEx7vvPqPun

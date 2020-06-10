@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE struts PUBLIC
+        "-//Apache Software Foundation//DTD Struts Configuration 2.3//EN"
+        "http://struts.apache.org/dtds/struts-2.3.dtd">
+
+<struts>
+    <package name="directory" namespace="/directory" extends="default">
+        <action name="createDirectory" class="com.free4lab.filesystem.action.DirectoryAction" method="createDirectory">
+            <result name="success" type="json"></result>
+        </action>
+
+        <action name="uploadFilePage" class="com.free4lab.filesystem.action.DirectoryAction" method="acquireAllDirectory">
+            <result name="success">/home/uploadFile.jsp</result>
+            <result name="error">/error/error.jsp</result>
+        </action>
+
+        <action name="findDepartmentByType" class="com.free4lab.filesystem.action.DirectoryAction" method="findDirectoryByType">
+            <result name="success">/include/admin/_department.jsp</result>
+        </action>
+
+        <action name="findEventDirectory" class="com.free4lab.filesystem.action.DirectoryAction" method="findDirectoryByType">
+            <result name="success" type="json"></result>
+        </action>
+
+        <action name="findAllDirectoryByType" class="com.free4lab.filesystem.action.DirectoryAction" method="findAllDirectoryByType">
+            <result name="success" type="json"></result>
+        </action>
+
+        <action name="findAllDirectory" class="com.free4lab.filesystem.action.DirectoryAction" method="findDirectory">
+            <result name="success" type="httpheader"></result>
+            <result name="error" type="redirect">/error/error.jsp</result>
+        </action>
+
+        <action name="delete" method="deleteById" class="com.free4lab.filesystem.action.DirectoryAction">
+            <result name="success" type="json"></result>
+        </action>
+
+        <action name="update" method="updateDirectory" class="com.free4lab.filesystem.action.DirectoryAction">
+            <result name="success" type="json"></result>
+        </action>
+
+    </package>
+</struts>

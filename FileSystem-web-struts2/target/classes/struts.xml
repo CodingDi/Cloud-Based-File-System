@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE struts PUBLIC
+        "-//Apache Software Foundation//DTD Struts Configuration 2.3//EN"
+        "http://struts.apache.org/dtds/struts-2.3.dtd">
+
+<struts>
+    <constant name="struts.enable.DynamicMethodInvocation" value="false"/>
+
+    <constant name="struts.devMode" value="false"/>
+
+    <constant name="struts.action.extension" value=","/>
+
+    <!--默认设置-->
+    <package name="default" extends="json-default" abstract="true">
+        <result-types>
+            <result-type name="json" class="org.apache.struts2.json.JSONResult" />
+        </result-types>
+
+        <!-- 当没有对应action时，返回404页面 -->
+        <default-action-ref name="404" />
+
+
+        <default-class-ref class="com.opensymphony.xwork2.ActionSupport" />
+
+        <global-results>
+            <!-- 当数据验证错误时，struts2默认返回input结果，如果对应的action没有定义input，返回406页面 -->
+            <result name="error">/error/error.jsp</result>
+        </global-results>
+
+        <global-exception-mappings>
+            <exception-mapping result="error" exception="java.lang.Exception" />
+        </global-exception-mappings>
+
+        <!--action要放在最后-->
+        <action name="404">
+            <result>/error/404.jsp</result>
+        </action>
+    </package>
+
+    <!--主要业务流程设置-->
+    <package name="root" namespace="/" extends="default">
+        <action name="" class="com.free4lab.filesystem.action.DefaultAction">
+            <result name="success" type="redirect">/home/index.jsp?enterpriseId=${enterpriseId}</result>
+        </action>
+    </package>
+
+    <include file="directory.xml"/>
+    <include file="file.xml"/>
+    <include file="account.xml"/>
+    <include file="login.xml"/>
+    <include file="enterprise.xml"/>
+    <include file="logo.xml"/>
+
+</struts>
